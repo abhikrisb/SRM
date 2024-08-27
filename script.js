@@ -63,7 +63,8 @@ async function updateCameraList(selectElement, videoElement) {
 async function startCamera(videoElement, deviceId) {
     const constraints = {
         video: {
-            deviceId: deviceId ? { exact: deviceId } : undefined
+            deviceId: deviceId ? { exact: deviceId } : undefined,
+            facingMode: { ideal: 'environment' } // Prefer the back camera on mobile devices
         }
     };
 
