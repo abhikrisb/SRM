@@ -27,15 +27,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         location.replace(`https:${location.href.substring(location.protocol.length)}`);
     }
 
+    // Check for mediaDevices support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        alert('Your browser does not support media devices.');
+        return;
+    }
+
     // Start the camera
     tab1.style.display = "none";
     tab1.style.display = "block";
     tab2.style.display = "none";
-    await updateCameraList(cameraSelect2, video2); // Update the dropdown 2
-    await startCamera(video1);
     await updateCameraList(cameraSelect1, video1); // Update the dropdown 1
+    await updateCameraList(cameraSelect2, video2); // Update the dropdown 2
+    await startCamera(video1, 'user'); // Start camera for ID card capture with front camera
 });
-
 
 async function updateCameraList(selectElement, videoElement) {
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -61,12 +66,17 @@ async function updateCameraList(selectElement, videoElement) {
 async function startCamera(videoElement, facingMode) {
     const constraints = {
         video: {
-            facingMode: facingMode ? { exact: facingMode } : 'user' // Default to front camera
+            facingMode: facingMode
         }
     };
 
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    videoElement.srcObject = stream;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoElement.srcObject = stream;
+    } catch (error) {
+        console.error('Error accessing media devices.', error);
+        alert('Error accessing media devices: ' + error.message);
+    }
 }
 // Event listener for the first capture button
 camera_button1.addEventListener('click', async function () {
