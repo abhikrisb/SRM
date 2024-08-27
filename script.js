@@ -43,21 +43,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function updateCameraList(selectElement, videoElement) {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
 
-    selectElement.innerHTML = '';
+        selectElement.innerHTML = '';
 
-    videoDevices.forEach(device => {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        option.text = device.label || `Camera ${selectElement.length + 1}`;
-        selectElement.appendChild(option);
-    });
+        videoDevices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.text = device.label || `Camera ${selectElement.length + 1}`;
+            selectElement.appendChild(option);
+        });
 
-    selectElement.addEventListener('change', async () => {
-        await startCamera(videoElement, selectElement.value);
-    });
+        selectElement.addEventListener('change', async () => {
+            await startCamera(videoElement, selectElement.value);
+        });
+    } catch (error) {
+        console.error('Error enumerating devices.', error);
+        alert('Error enumerating devices: ' + error.message);
+    }
 }
 
 async function startCamera(videoElement, deviceId) {
