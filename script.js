@@ -45,7 +45,20 @@ async function startCamera(videoElement) {
         });
         videoElement.srcObject = stream;
     } catch (error) {
-        console.error("Error accessing camera:", error);
+        if (error.name === "OverconstrainedError") {
+            console.error("OverconstrainedError: The specified deviceId does not match any available camera. Falling back to default camera.");
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false
+                });
+                videoElement.srcObject = stream;
+            } catch (fallbackError) {
+                console.error("Error accessing default camera:", fallbackError);
+            }
+        } else {
+            console.error("Error accessing camera:", error);
+        }
     }
 }
 
