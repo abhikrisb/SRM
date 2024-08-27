@@ -48,7 +48,7 @@ async function updateCameraList(selectElement, videoElement) {
 
     selectElement.innerHTML = '';
 
-    if (videoDevices.length === 0 || (videoDevices.length === 1 && videoDevices[0].label === 'Camera 1')) {
+    if ((videoDevices.length === 1 && videoDevices[0].label === 'Camera 1')) {
         const frontOption = document.createElement('option');
         frontOption.value = 'user';
         frontOption.text = 'Front Camera';
