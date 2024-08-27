@@ -1,0 +1,120 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+header {
+    background-color: #004080;
+    color: #ffffff;
+    padding: 20px 0;
+    text-align: center;
+    position: relative;
+}
+
+.logo-container {
+    position: absolute;
+    left: 20px;
+    top: 10px;
+}
+
+.logo {
+    width: 100px;
+}
+
+h1 {
+    font-size: 36px;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.serviceBox {
+    display: flex;
+    justify-content: center;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+button {
+    margin: 10px auto; /* Center the buttons */
+    padding: 15px 30px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #004080;
+    color: #ffffff;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    display: block; /* Ensure buttons are block-level */
+}
+
+button:hover {
+    background-color: #003366;
+}
+
+.tabcontent, .tabcontent1 {
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    width: 500px;
+    text-align: center; /* Center align content */
+    display: none; /* Hidden by default, shown via JS */
+}
+
+#idcard.tabcontent {
+    display: block; /* Start with the ID card content visible */
+}
+
+video {
+    width: 100%;
+    border-radius: 10px;
+}
+
+select {
+    margin-top: 15px;
+    padding: 5px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    width: 100%;
+}
+
+footer {
+    background-color: #004080;
+    color: #ffffff;
+    text-align: center;
+    padding: 10px 0;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+}
+
+canvas {
+    border-radius: 10px;
+    display: none; /* Hidden initially */
+    margin-bottom: 20px; /* Space between canvas and buttons */
+}
+
+#reset1 {
+    display: none;
+}
+
+#button3 {
+    display: none;
+}
+
+#reset2{
+    display: none;
+}
+
+#button4 {
+    display: none;
+}
