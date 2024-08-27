@@ -1,25 +1,25 @@
-let camera_button1 = document.querySelector("#button1"); // ID for the first capture button
-let video1 = document.querySelector("#video1"); // ID for the first video element
-let button3 = document.querySelector("#button3"); // ID for the first continue button
-let canvas1 = document.querySelector("#canvas1"); // ID for the first canvas element
-let resetButton = document.querySelector("#reset1"); // ID for the first reset button
+let camera_button1 = document.querySelector("#button1"); //first capture button
+let video1 = document.querySelector("#video1"); //first video element
+let button3 = document.querySelector("#button3"); //first continue button
+let canvas1 = document.querySelector("#canvas1"); //first canvas element
+let resetButton = document.querySelector("#reset1"); //first reset button
 let tablecontent1 = document.querySelector("#idcard");
 let tablecontent2 = document.querySelector("#face");
-let captureCount = 0; // Capture count for the first camera
+let captureCount = 0; //count for the first camera
 let image1; // Store 1st Image (IDCard)
 let tab1 = document.querySelector(".tab1"); // header1
 
-let camera_button2 = document.querySelector("#button2"); // ID for the second capture button
-let video2 = document.querySelector("#video2"); // ID for the second video element
-let button4 = document.querySelector("#button4"); // ID for the second continue button
-let canvas2 = document.querySelector("#canvas2"); // ID for the second canvas element
-let resetButton2 = document.querySelector("#reset2"); // ID for the second reset button
-let captureCount2 = 0; // Capture count for the second camera
+let camera_button2 = document.querySelector("#button2"); //second capture button
+let video2 = document.querySelector("#video2"); //second video element
+let button4 = document.querySelector("#button4"); //second continue button
+let canvas2 = document.querySelector("#canvas2"); //second canvas element
+let resetButton2 = document.querySelector("#reset2"); //second reset button
+let captureCount2 = 0; //count for the second camera
 let image2; // Store 2nd Image (Face Check)
 let tab2 = document.querySelector(".tab2"); // header2
 
-let cameraSelect1 = document.querySelector("#cameraSelect1"); // Select dropdown for the first camera
-let cameraSelect2 = document.querySelector("#cameraSelect2"); // Select dropdown for the second camera
+let cameraSelect1 = document.querySelector("#cameraSelect1"); //dropdown for the first camera
+let cameraSelect2 = document.querySelector("#cameraSelect2"); //dropdown for the second camera
 
 document.addEventListener("DOMContentLoaded", async () => {
     // Ensure the page is loaded over HTTPS
@@ -27,65 +27,44 @@ document.addEventListener("DOMContentLoaded", async () => {
         location.replace(`https:${location.href.substring(location.protocol.length)}`);
     }
 
-    // Start the camera stream when the page loads
+    // Start the camera
     tab1.style.display = "none";
     tab1.style.display = "block";
     tab2.style.display = "none";
-    await updateCameraList(cameraSelect1, video1); // Update the dropdown for the first camera
-    await updateCameraList(cameraSelect2, video2); // Update the dropdown for the second camera
+    await updateCameraList(cameraSelect1, video1); // Update the dropdown 1
+    await updateCameraList(cameraSelect2, video2); // Update the dropdown 2
     await startCamera(video1);
 });
 
 
-async function startCamera(videoElement) {
-    try {
-        let selectedDeviceId;
-        if (videoElement == video1) {
-            selectedDeviceId = cameraSelect1.value;
-        } else if (videoElement == video2) {
-            selectedDeviceId = cameraSelect2.value;
-        }
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: { exact: selectedDeviceId } },
-            audio: false
-        });
-        videoElement.srcObject = stream;
-    } catch (error) {
-        if (error.name === "OverconstrainedError") {
-            console.error("OverconstrainedError: The specified deviceId does not match any available camera. Falling back to default camera.");
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: false
-                });
-                videoElement.srcObject = stream;
-            } catch (fallbackError) {
-                console.error("Error accessing default camera:", fallbackError);
-            }
-        } else {
-            console.error("Error accessing camera:", error);
-        }
-    }
+async function updateCameraList(selectElement, videoElement) {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+    selectElement.innerHTML = '';
+
+    videoDevices.forEach(device => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `Camera ${selectElement.length + 1}`;
+        selectElement.appendChild(option);
+    });
+
+    selectElement.addEventListener('change', async () => {
+        await startCamera(videoElement, selectElement.value);
+    });
 }
 
-async function updateCameraList(selectElement, videoElement) {
-    try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        selectElement.innerHTML = '';
-        videoDevices.forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.text = device.label || `Camera ${selectElement.length + 1}`;
-            selectElement.appendChild(option);
-        });
-        if (videoDevices.length > 0) {
-            selectElement.value = videoDevices[0].deviceId;
-            await startCamera(videoElement);
+async function startCamera(videoElement, deviceId) {
+    const constraints = {
+        video: {
+            deviceId: deviceId ? { exact: deviceId } : undefined,
+            facingMode: 'user' // Default to front camera
         }
-    } catch (error) {
-        console.error('Error updating camera list:', error);
-    }
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    videoElement.srcObject = stream;
 }
 // Event listener for the first capture button
 camera_button1.addEventListener('click', async function () {
