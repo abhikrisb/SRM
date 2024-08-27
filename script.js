@@ -48,21 +48,15 @@ async function updateCameraList(selectElement, videoElement) {
 
     selectElement.innerHTML = '';
 
-    // const frontOption = document.createElement('option');
-    // frontOption.value = 'user';
-    // frontOption.text = 'Front Camera';
-    // selectElement.appendChild(frontOption);
+    const frontOption = document.createElement('option');
+    frontOption.value = 'user';
+    frontOption.text = 'Front Camera';
+    selectElement.appendChild(frontOption);
 
-    // const backOption = document.createElement('option');
-    // backOption.value = 'environment';
-    // backOption.text = 'Back Camera';
-    // selectElement.appendChild(backOption);
-    videoDevices.forEach(device => {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        option.text = device.label || `Camera ${selectElement.length + 1}`;
-        selectElement.appendChild(option);
-    });
+    const backOption = document.createElement('option');
+    backOption.value = 'environment';
+    backOption.text = 'Back Camera';
+    selectElement.appendChild(backOption);
 
     selectElement.addEventListener('change', async () => {
         await startCamera(videoElement, selectElement.value);
