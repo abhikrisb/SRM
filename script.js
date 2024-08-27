@@ -22,14 +22,20 @@ let cameraSelect1 = document.querySelector("#cameraSelect1"); // Select dropdown
 let cameraSelect2 = document.querySelector("#cameraSelect2"); // Select dropdown for the second camera
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // Ensure the page is loaded over HTTPS
+    if (location.protocol !== 'https:') {
+        location.replace(`https:${location.href.substring(location.protocol.length)}`);
+    }
+
     // Start the camera stream when the page loads
     tab1.style.display = "none";
     tab1.style.display = "block";
     tab2.style.display = "none";
-    updateCameraList(cameraSelect1, video1); // Update the dropdown for the first camera
-    updateCameraList(cameraSelect2, video2); // Update the dropdown for the second camera
-    startCamera(video1);
+    await updateCameraList(cameraSelect1, video1); // Update the dropdown for the first camera
+    await updateCameraList(cameraSelect2, video2); // Update the dropdown for the second camera
+    await startCamera(video1);
 });
+
 
 async function startCamera(videoElement) {
     try {
@@ -66,25 +72,21 @@ async function updateCameraList(selectElement, videoElement) {
     try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
-
-        selectElement.innerHTML = ''; // Clear existing options
-
+        selectElement.innerHTML = '';
         videoDevices.forEach(device => {
             const option = document.createElement('option');
             option.value = device.deviceId;
-            option.text = device.label || `Camera ${videoDevices.indexOf(device) + 1}`;
+            option.text = device.label || `Camera ${selectElement.length + 1}`;
             selectElement.appendChild(option);
         });
-
         if (videoDevices.length > 0) {
             selectElement.value = videoDevices[0].deviceId;
-            startCamera(videoElement); // Start the camera with the default device
+            await startCamera(videoElement);
         }
     } catch (error) {
-        console.error("Error updating camera list:", error);
+        console.error('Error updating camera list:', error);
     }
 }
-
 // Event listener for the first capture button
 camera_button1.addEventListener('click', async function () {
     const ctx = canvas1.getContext('2d');
