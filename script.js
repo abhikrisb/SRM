@@ -74,7 +74,7 @@ camera_button1.addEventListener('click', async function () {
     video1.style.display = "none";
     camera_button1.style.display = "none";
     cameraSelect1.style.display = "none";
-    canvas1.style.display = "block"; // Show the canvas above the buttons
+    canvas1.style.display = "block";
 
     // Capture the image data
     image1 = canvas1.toDataURL('image/jpeg');
