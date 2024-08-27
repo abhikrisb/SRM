@@ -48,25 +48,39 @@ async function updateCameraList(selectElement, videoElement) {
 
     selectElement.innerHTML = '';
 
-    const frontOption = document.createElement('option');
-    frontOption.value = 'user';
-    frontOption.text = 'Front Camera';
-    selectElement.appendChild(frontOption);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    const backOption = document.createElement('option');
-    backOption.value = 'environment';
-    backOption.text = 'Back Camera';
-    selectElement.appendChild(backOption);
+    if (isMobile) {
+        // Fallback for mobile devices
+        const frontOption = document.createElement('option');
+        frontOption.value = 'user';
+        frontOption.text = 'Front Camera';
+        selectElement.appendChild(frontOption);
+
+        const backOption = document.createElement('option');
+        backOption.value = 'environment';
+        backOption.text = 'Back Camera';
+        selectElement.appendChild(backOption);
+    } else {
+        // Populate options for PCs
+        videoDevices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.text = device.label || `Camera ${selectElement.length + 1}`;
+            selectElement.appendChild(option);
+        });
+    }
 
     selectElement.addEventListener('change', async () => {
         await startCamera(videoElement, selectElement.value);
     });
 }
 
-async function startCamera(videoElement, facingMode) {
+async function startCamera(videoElement, facingModeOrDeviceId) {
     const constraints = {
         video: {
-            facingMode: facingMode
+            facingMode: /user|environment/.test(facingModeOrDeviceId) ? facingModeOrDeviceId : undefined,
+            deviceId: !/user|environment/.test(facingModeOrDeviceId) ? { exact: facingModeOrDeviceId } : undefined
         }
     };
 
