@@ -48,12 +48,12 @@ async function updateCameraList(selectElement, videoElement) {
 
     selectElement.innerHTML = '';
 
-    if (videoDevices.length === 0) {
+    if (videoDevices.length === 0 || (videoDevices.length === 1 && videoDevices[0].label === 'Camera 1')) {
         const frontOption = document.createElement('option');
         frontOption.value = 'user';
         frontOption.text = 'Front Camera';
         selectElement.appendChild(frontOption);
-
+    
         const backOption = document.createElement('option');
         backOption.value = 'environment';
         backOption.text = 'Back Camera';
@@ -75,7 +75,7 @@ async function updateCameraList(selectElement, videoElement) {
 async function startCamera(videoElement, facingMode) {
     const constraints = {
         video: {
-            facingMode: facingMode
+            deviceId: deviceId ? { exact: deviceId } : undefined
         }
     };
 
