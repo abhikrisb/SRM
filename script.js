@@ -31,9 +31,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     tab1.style.display = "none";
     tab1.style.display = "block";
     tab2.style.display = "none";
-    await updateCameraList(cameraSelect1, video1); // Update the dropdown 1
     await updateCameraList(cameraSelect2, video2); // Update the dropdown 2
     await startCamera(video1);
+    await updateCameraList(cameraSelect1, video1); // Update the dropdown 1
 });
 
 
