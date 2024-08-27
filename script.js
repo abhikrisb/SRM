@@ -27,59 +27,46 @@ document.addEventListener("DOMContentLoaded", async () => {
         location.replace(`https:${location.href.substring(location.protocol.length)}`);
     }
 
-    // Check for mediaDevices support
-    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-        alert('Your browser does not support media devices.');
-        return;
-    }
-
     // Start the camera
     tab1.style.display = "none";
     tab1.style.display = "block";
     tab2.style.display = "none";
-    await updateCameraList(cameraSelect1, video1); // Update the dropdown 1
     await updateCameraList(cameraSelect2, video2); // Update the dropdown 2
-    await startCamera(video1, cameraSelect1.value); // Start camera for ID card capture with selected camera
+    await startCamera(video1);
+    await updateCameraList(cameraSelect1, video1); // Update the dropdown 1
 });
 
+
 async function updateCameraList(selectElement, videoElement) {
-    try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput');
 
-        selectElement.innerHTML = '';
+    selectElement.innerHTML = '';
 
-        videoDevices.forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.text = device.label || `Camera ${selectElement.length + 1}`;
-            selectElement.appendChild(option);
-        });
+    const frontOption = document.createElement('option');
+    frontOption.value = 'user';
+    frontOption.text = 'Front Camera';
+    selectElement.appendChild(frontOption);
 
-        selectElement.addEventListener('change', async () => {
-            await startCamera(videoElement, selectElement.value);
-        });
-    } catch (error) {
-        console.error('Error enumerating devices.', error);
-        alert('Error enumerating devices: ' + error.message);
-    }
+    const backOption = document.createElement('option');
+    backOption.value = 'environment';
+    backOption.text = 'Back Camera';
+    selectElement.appendChild(backOption);
+
+    selectElement.addEventListener('change', async () => {
+        await startCamera(videoElement, selectElement.value);
+    });
 }
 
-async function startCamera(videoElement, deviceId) {
+async function startCamera(videoElement, facingMode) {
     const constraints = {
         video: {
-            deviceId: deviceId ? { exact: deviceId } : undefined,
-            facingMode: { ideal: 'environment' } // Prefer the back camera on mobile devices
+            facingMode: facingMode ? { exact: facingMode } : 'user' // Default to front camera
         }
     };
 
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoElement.srcObject = stream;
-    } catch (error) {
-        console.error('Error accessing media devices.', error);
-        alert('Error accessing media devices: ' + error.message);
-    }
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    videoElement.srcObject = stream;
 }
 // Event listener for the first capture button
 camera_button1.addEventListener('click', async function () {
