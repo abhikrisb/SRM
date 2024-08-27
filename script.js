@@ -31,9 +31,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     tab1.style.display = "none";
     tab1.style.display = "block";
     tab2.style.display = "none";
-    await updateCameraList(cameraSelect2, video2); // Update the dropdown 2
-    await startCamera(video1);
     await updateCameraList(cameraSelect1, video1); // Update the dropdown 1
+    await updateCameraList(cameraSelect2, video2); // Update the dropdown 2
+    await startCamera(video1, 'user'); // Start camera for ID card capture with front camera
 });
 
 
@@ -43,23 +43,25 @@ async function updateCameraList(selectElement, videoElement) {
 
     selectElement.innerHTML = '';
 
-    videoDevices.forEach(device => {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        option.text = device.label || `Camera ${selectElement.length + 1}`;
-        selectElement.appendChild(option);
-    });
+    const frontOption = document.createElement('option');
+    frontOption.value = 'user';
+    frontOption.text = 'Front Camera';
+    selectElement.appendChild(frontOption);
+
+    const backOption = document.createElement('option');
+    backOption.value = 'environment';
+    backOption.text = 'Back Camera';
+    selectElement.appendChild(backOption);
 
     selectElement.addEventListener('change', async () => {
         await startCamera(videoElement, selectElement.value);
     });
 }
 
-async function startCamera(videoElement, deviceId) {
+async function startCamera(videoElement, facingMode) {
     const constraints = {
         video: {
-            deviceId: deviceId ? { exact: deviceId } : undefined,
-            facingMode: 'user' // Default to front camera
+            facingMode: facingMode ? { exact: facingMode } : 'user' // Default to front camera
         }
     };
 
