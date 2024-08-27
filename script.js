@@ -21,26 +21,31 @@ let tab2 = document.querySelector(".tab2"); // header2
 let cameraSelect1 = document.querySelector("#cameraSelect1"); //dropdown for the first camera
 let cameraSelect2 = document.querySelector("#cameraSelect2"); //dropdown for the second camera
 
-// Check for mediaDevices support
-if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-    alert('Your browser does not support media devices.');
-    return;
-}
+document.addEventListener("DOMContentLoaded", async () => {
+    // Ensure the page is loaded over HTTPS
+    if (location.protocol !== 'https:') {
+        location.replace(`https:${location.href.substring(location.protocol.length)}`);
+    }
 
-// Start the camera
-tab1.style.display = "none";
-tab1.style.display = "block";
-tab2.style.display = "none";
-await updateCameraList(cameraSelect1, video1); // Update the dropdown 1
-await updateCameraList(cameraSelect2, video2); // Update the dropdown 2
-await startCamera(video1, cameraSelect1.value); // Start camera for ID card capture with selected camera
+    // Check for mediaDevices support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        alert('Your browser does not support media devices.');
+        return;
+    }
+
+    // Start the camera
+    tab1.style.display = "none";
+    tab1.style.display = "block";
+    tab2.style.display = "none";
+    await updateCameraList(cameraSelect1, video1); // Update the dropdown 1
+    await updateCameraList(cameraSelect2, video2); // Update the dropdown 2
+    await startCamera(video1, cameraSelect1.value); // Start camera for ID card capture with selected camera
+});
 
 async function updateCameraList(selectElement, videoElement) {
     try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        console.log('Devices:', devices); // Log all devices
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        console.log('Video Devices:', videoDevices); // Log video devices
 
         selectElement.innerHTML = '';
 
@@ -71,8 +76,8 @@ async function startCamera(videoElement, deviceId) {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         videoElement.srcObject = stream;
     } catch (error) {
-        console.error('Error starting camera.', error);
-        alert('Error starting camera: ' + error.message);
+        console.error('Error accessing media devices.', error);
+        alert('Error accessing media devices: ' + error.message);
     }
 }
 // Event listener for the first capture button
