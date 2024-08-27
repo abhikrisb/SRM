@@ -72,7 +72,7 @@ async function updateCameraList(selectElement, videoElement) {
     });
 }
 
-async function startCamera(videoElement, facingMode) {
+async function startCamera(videoElement, deviceId) {
     const constraints = {
         video: {
             deviceId: deviceId ? { exact: deviceId } : undefined
