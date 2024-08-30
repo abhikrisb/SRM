@@ -34,12 +34,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         await new Promise(resolve => referenceImage.onload = resolve);
 
         // Start the camera
-        const video = document.createElement('video');
-        video.style.display = 'none';
-        document.body.appendChild(video);
-        await startCamera(video);
+        await startCamera(video1);
 
-        video.addEventListener('loadedmetadata', () => {
+        video1.addEventListener('loadedmetadata', () => {
             // Create canvas overlay
             const canvasOverlay = document.createElement('canvas');
             canvasOverlay.width = video.videoWidth;
