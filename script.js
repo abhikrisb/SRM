@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await updateCameraList(cameraSelect2, video2); 
     await startCamera(video1, 'user'); 
     const referenceImagePath = 'image/reference.jpg';
-    video.addEventListener('play', () => {
+    video1.addEventListener('play', () => {
         const cap = new cv.VideoCapture(video);
         const referenceImage = new Image();
         referenceImage.src = referenceImagePath;
