@@ -22,121 +22,25 @@ let cameraSelect1 = document.querySelector("#cameraSelect1"); //dropdown for the
 let cameraSelect2 = document.querySelector("#cameraSelect2"); //dropdown for the second camera
 
 document.addEventListener("DOMContentLoaded", async () => {
-    try {
-        // Ensure the page is loaded over HTTPS
-        if (location.protocol !== 'https:') {
-            location = `https:${location.href.substring(location.protocol.length)}`;
-        }
-
-        // Load the reference image
-        const referenceImage = new Image();
-        referenceImage.src = 'image/reference.jpg'; // Replace with the path to your reference image
-        await new Promise(resolve => referenceImage.onload = resolve);
-
-        // Start the camera
-        await startCamera(video1);
-
-        video1.addEventListener('loadedmetadata', () => {
-            // Create canvas overlay
-            const canvasOverlay = document.createElement('canvas');
-            canvasOverlay.width = video.videoWidth;
-            canvasOverlay.height = video.videoHeight;
-            canvasOverlay.style.position = 'absolute';
-            canvasOverlay.style.top = video.offsetTop + 'px';
-            canvasOverlay.style.left = video.offsetLeft + 'px';
-            document.body.appendChild(canvasOverlay);
-            const ctx = canvasOverlay.getContext('2d');
-
-            // Ensure OpenCV.js is ready
-            cv['onRuntimeInitialized'] = () => {
-                // Start processing video frames
-                processVideoFrame(video, ctx, referenceImage);
-            };
-        });
-    } catch (error) {
-        console.error("Error during initialization:", error);
+    // Ensure the page is loaded over HTTPS credits:StackOverflow (30 mins of research)
+    if (location.protocol !== 'https:') {
+        location.replace(`https:${location.href.substring(location.protocol.length)}`);
     }
+
+    // Check for mediaDevices support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        alert('Your browser does not support media devices.');
+        return;
+    }
+
+    // Start the camera
+    tab1.style.display = "none";
+    tab1.style.display = "block";
+    tab2.style.display = "none";
+    await updateCameraList(cameraSelect1, video1); 
+    await updateCameraList(cameraSelect2, video2); 
+    await startCamera(video1, 'user'); 
 });
-
-async function startCamera(video) {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        await video.play();
-    } catch (error) {
-        console.error("Error accessing the camera:", error);
-    }
-}
-
-function processVideoFrame(video, ctx, referenceImage) {
-    const width = video.videoWidth;
-    const height = video.videoHeight;
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(video, 0, 0, width, height);
-
-    // Get image data from canvas
-    const frame = ctx.getImageData(0, 0, width, height);
-
-    // Convert the frame and reference image to OpenCV Mat
-    const frameMat = cv.matFromImageData(frame);
-    const referenceMat = cv.imread(referenceImage);
-
-    // Convert to grayscale
-    cv.cvtColor(frameMat, frameMat, cv.COLOR_RGBA2GRAY);
-    cv.cvtColor(referenceMat, referenceMat, cv.COLOR_RGBA2GRAY);
-
-    // Detect ORB keypoints and descriptors
-    const orb = new cv.ORB();
-    const keypoints1 = new cv.KeyPointVector();
-    const keypoints2 = new cv.KeyPointVector();
-    const descriptors1 = new cv.Mat();
-    const descriptors2 = new cv.Mat();
-    orb.detectAndCompute(referenceMat, new cv.Mat(), keypoints1, descriptors1);
-    orb.detectAndCompute(frameMat, new cv.Mat(), keypoints2, descriptors2);
-
-    // Match descriptors
-    const bf = new cv.BFMatcher(cv.NORM_HAMMING, true);
-    const matches = new cv.DMatchVector();
-    bf.match(descriptors1, descriptors2, matches);
-
-    // Draw matches
-    const result = new cv.Mat();
-    cv.drawMatches(referenceMat, keypoints1, frameMat, keypoints2, matches, result);
-
-    // Find bounding box
-    if (matches.size() > 0) {
-        let minX = width, minY = height, maxX = 0, maxY = 0;
-        for (let i = 0; i < matches.size(); i++) {
-            const match = matches.get(i);
-            const pt = keypoints2.get(match.trainIdx).pt;
-            if (pt.x < minX) minX = pt.x;
-            if (pt.x > maxX) maxX = pt.x;
-            if (pt.y < minY) minY = pt.y;
-            if (pt.y > maxY) maxY = pt.y;
-        }
-
-        // Draw bounding box
-        ctx.beginPath();
-        ctx.rect(minX, minY, maxX - minX, maxY - minY);
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    }
-
-    // Clean up
-    frameMat.delete();
-    referenceMat.delete();
-    keypoints1.delete();
-    keypoints2.delete();
-    descriptors1.delete();
-    descriptors2.delete();
-    matches.delete();
-    result.delete();
-
-    // Process the next frame
-    requestAnimationFrame(() => processVideoFrame(video, ctx, referenceImage));
-}
 
 async function updateCameraList(selectElement, videoElement) {
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -172,6 +76,22 @@ async function updateCameraList(selectElement, videoElement) {
     });
 }
 
+async function startCamera(videoElement, facingModeOrDeviceId) {
+    const constraints = {
+        video: {
+            facingMode: /user|environment/.test(facingModeOrDeviceId) ? facingModeOrDeviceId : undefined,
+            deviceId: !/user|environment/.test(facingModeOrDeviceId) ? { exact: facingModeOrDeviceId } : undefined
+        }
+    };
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoElement.srcObject = stream;
+    } catch (error) {
+        console.error('Error accessing media devices.', error);
+        alert('Error accessing media devices: ' + error.message);
+    }
+}
 // Event listener for the first capture button
 camera_button1.addEventListener('click', async function () {
     const ctx = canvas1.getContext('2d');
