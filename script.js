@@ -49,8 +49,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.body.appendChild(canvasOverlay);
         const ctx = canvasOverlay.getContext('2d');
 
-        // Start processing video frames
-        processVideoFrame(video, ctx, referenceImage);
+        // Ensure OpenCV.js is ready
+        cv['onRuntimeInitialized'] = () => {
+            // Start processing video frames
+            processVideoFrame(video, ctx, referenceImage);
+        };
     });
 });
 
