@@ -38,18 +38,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.body.appendChild(video);
     await startCamera(video);
 
-    // Create canvas overlay
-    const canvasOverlay = document.createElement('canvas');
-    canvasOverlay.width = video.videoWidth;
-    canvasOverlay.height = video.videoHeight;
-    canvasOverlay.style.position = 'absolute';
-    canvasOverlay.style.top = video.offsetTop + 'px';
-    canvasOverlay.style.left = video.offsetLeft + 'px';
-    document.body.appendChild(canvasOverlay);
-    const ctx = canvasOverlay.getContext('2d');
+    video.addEventListener('loadedmetadata', () => {
+        // Create canvas overlay
+        const canvasOverlay = document.createElement('canvas');
+        canvasOverlay.width = video.videoWidth;
+        canvasOverlay.height = video.videoHeight;
+        canvasOverlay.style.position = 'absolute';
+        canvasOverlay.style.top = video.offsetTop + 'px';
+        canvasOverlay.style.left = video.offsetLeft + 'px';
+        document.body.appendChild(canvasOverlay);
+        const ctx = canvasOverlay.getContext('2d');
 
-    // Start processing video frames
-    processVideoFrame(video, ctx, referenceImage);
+        // Start processing video frames
+        processVideoFrame(video, ctx, referenceImage);
+    });
 });
 
 function processVideoFrame(video, ctx, referenceImage) {
