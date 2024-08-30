@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Load the reference image
     const referenceImage = new Image();
-    referenceImage.src = 'path/to/your/reference/image.jpg'; // Replace with the path to your reference image
+    referenceImage.src = 'image/reference.jpg'; // Replace with the path to your reference image
     await new Promise(resolve => referenceImage.onload = resolve);
 
     // Start the camera
