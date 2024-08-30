@@ -40,6 +40,57 @@ document.addEventListener("DOMContentLoaded", async () => {
     await updateCameraList(cameraSelect1, video1); 
     await updateCameraList(cameraSelect2, video2); 
     await startCamera(video1, 'user'); 
+    const referenceImagePath = 'image/reference.jpg';
+    video.addEventListener('play', () => {
+        const cap = new cv.VideoCapture(video);
+        const referenceImage = new Image();
+        referenceImage.src = referenceImagePath;
+
+        referenceImage.onload = () => {
+            const refMat = cv.imread(referenceImage);
+            const orb = new cv.ORB();
+            const kp1 = new cv.KeyPointVector();
+            const des1 = new cv.Mat();
+            orb.detectAndCompute(refMat, new cv.Mat(), kp1, des1);
+
+            const processFrame = () => {
+                if (video.paused || video.ended) {
+                    refMat.delete();
+                    kp1.delete();
+                    des1.delete();
+                    orb.delete();
+                    return;
+                }
+
+                const frame = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+                cap.read(frame);
+
+                const kp2 = new cv.KeyPointVector();
+                const des2 = new cv.Mat();
+                orb.detectAndCompute(frame, new cv.Mat(), kp2, des2);
+
+                const bf = new cv.BFMatcher(cv.NORM_HAMMING, true);
+                const matches = new cv.DMatchVector();
+                bf.match(des1, des2, matches);
+
+                // Draw matches
+                const result = new cv.Mat();
+                cv.drawMatches(refMat, kp1, frame, kp2, matches, result);
+
+                cv.imshow('canvasOutput', result);
+
+                frame.delete();
+                kp2.delete();
+                des2.delete();
+                matches.delete();
+                result.delete();
+
+                requestAnimationFrame(processFrame);
+            };
+
+            processFrame();
+        };
+    });
 });
 
 async function updateCameraList(selectElement, videoElement) {
