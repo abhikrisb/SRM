@@ -22,40 +22,54 @@ let cameraSelect1 = document.querySelector("#cameraSelect1"); //dropdown for the
 let cameraSelect2 = document.querySelector("#cameraSelect2"); //dropdown for the second camera
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // Ensure the page is loaded over HTTPS
-    if (location.protocol !== 'https:') {
-        location = `https:${location.href.substring(location.protocol.length)}`;
+    try {
+        // Ensure the page is loaded over HTTPS
+        if (location.protocol !== 'https:') {
+            location = `https:${location.href.substring(location.protocol.length)}`;
+        }
+
+        // Load the reference image
+        const referenceImage = new Image();
+        referenceImage.src = 'image/reference.jpg'; // Replace with the path to your reference image
+        await new Promise(resolve => referenceImage.onload = resolve);
+
+        // Start the camera
+        const video = document.createElement('video');
+        video.style.display = 'none';
+        document.body.appendChild(video);
+        await startCamera(video);
+
+        video.addEventListener('loadedmetadata', () => {
+            // Create canvas overlay
+            const canvasOverlay = document.createElement('canvas');
+            canvasOverlay.width = video.videoWidth;
+            canvasOverlay.height = video.videoHeight;
+            canvasOverlay.style.position = 'absolute';
+            canvasOverlay.style.top = video.offsetTop + 'px';
+            canvasOverlay.style.left = video.offsetLeft + 'px';
+            document.body.appendChild(canvasOverlay);
+            const ctx = canvasOverlay.getContext('2d');
+
+            // Ensure OpenCV.js is ready
+            cv['onRuntimeInitialized'] = () => {
+                // Start processing video frames
+                processVideoFrame(video, ctx, referenceImage);
+            };
+        });
+    } catch (error) {
+        console.error("Error during initialization:", error);
     }
-
-    // Load the reference image
-    const referenceImage = new Image();
-    referenceImage.src = 'image/reference.jpg'; // Replace with the path to your reference image
-    await new Promise(resolve => referenceImage.onload = resolve);
-
-    // Start the camera
-    const video = document.createElement('video');
-    video.style.display = 'none';
-    document.body.appendChild(video);
-    await startCamera(video);
-
-    video.addEventListener('loadedmetadata', () => {
-        // Create canvas overlay
-        const canvasOverlay = document.createElement('canvas');
-        canvasOverlay.width = video.videoWidth;
-        canvasOverlay.height = video.videoHeight;
-        canvasOverlay.style.position = 'absolute';
-        canvasOverlay.style.top = video.offsetTop + 'px';
-        canvasOverlay.style.left = video.offsetLeft + 'px';
-        document.body.appendChild(canvasOverlay);
-        const ctx = canvasOverlay.getContext('2d');
-
-        // Ensure OpenCV.js is ready
-        cv['onRuntimeInitialized'] = () => {
-            // Start processing video frames
-            processVideoFrame(video, ctx, referenceImage);
-        };
-    });
 });
+
+async function startCamera(video) {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        await video.play();
+    } catch (error) {
+        console.error("Error accessing the camera:", error);
+    }
+}
 
 function processVideoFrame(video, ctx, referenceImage) {
     const width = video.videoWidth;
@@ -161,22 +175,6 @@ async function updateCameraList(selectElement, videoElement) {
     });
 }
 
-async function startCamera(videoElement, facingModeOrDeviceId) {
-    const constraints = {
-        video: {
-            facingMode: /user|environment/.test(facingModeOrDeviceId) ? facingModeOrDeviceId : undefined,
-            deviceId: !/user|environment/.test(facingModeOrDeviceId) ? { exact: facingModeOrDeviceId } : undefined
-        }
-    };
-
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoElement.srcObject = stream;
-    } catch (error) {
-        console.error('Error accessing media devices.', error);
-        alert('Error accessing media devices: ' + error.message);
-    }
-}
 // Event listener for the first capture button
 camera_button1.addEventListener('click', async function () {
     const ctx = canvas1.getContext('2d');
