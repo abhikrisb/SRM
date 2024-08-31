@@ -21,7 +21,25 @@ let tab2 = document.querySelector(".tab2"); // header2
 let cameraSelect1 = document.querySelector("#cameraSelect1"); //dropdown for the first camera
 let cameraSelect2 = document.querySelector("#cameraSelect2"); //dropdown for the second camera
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    // Ensure the page is loaded over HTTPS credits:StackOverflow (30 mins of research)
+    if (location.protocol !== 'https:') {
+        location.replace(`https:${location.href.substring(location.protocol.length)}`);
+    }
+
+    // Check for mediaDevices support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        alert('Your browser does not support media devices.');
+        return;
+    }
+
+    // Start the camera
+    tab1.style.display = "none";
+    tab1.style.display = "block";
+    tab2.style.display = "none";
+    await updateCameraList(cameraSelect1, video1); 
+    await updateCameraList(cameraSelect2, video2); 
+    await startCamera(video1, 'user'); 
     const cameraButton1 = document.getElementById('button1');
     const video1 = document.getElementById('video1');
     const canvas1 = document.getElementById('canvas1');
