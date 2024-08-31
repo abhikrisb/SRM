@@ -115,11 +115,38 @@ camera_button1.addEventListener('click', async function () {
 
     // Check for face in the image
     await checkFace(image1);  
-  captureCount++;
-  if (captureCount >= 1) {
-      resetButton.style.display = "block"; // Show the reset button below the canvas
-      button3.style.display = "block"; // Show the continue button below the canvas
-  }
+    captureCount++;
+    if (captureCount >= 1) {
+        resetButton.style.display = "block"; // Show the reset button below the canvas
+        button3.style.display = "block"; // Show the continue button below the canvas
+    }
+
+    // Load the reference image
+    const referenceImagePath = 'image/reference.jpg';
+    const referenceImage = new Image();
+    referenceImage.src = referenceImagePath;
+
+    referenceImage.onload = () => {
+        // Load the captured image into an Image object
+        const capturedImage = new Image();
+        capturedImage.src = image1;
+
+        capturedImage.onload = () => {
+            // Compare the images using resemble.js
+            resemble(referenceImage.src)
+                .compareTo(capturedImage.src)
+                .onComplete(function(data) {
+                    const similarityScore = 1 - data.misMatchPercentage / 100;
+
+                    // Display the result
+                    if (similarityScore > 0.8) { // Assuming a threshold of 0.8 for similarity
+                        alert('The ID card image is similar to the reference image.');
+                    } else {
+                        alert('The ID card image is not similar to the reference image.');
+                    }
+                });
+        };
+    };
 });
 
 // Event listener for the second capture button
