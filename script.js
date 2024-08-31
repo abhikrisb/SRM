@@ -40,13 +40,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await updateCameraList(cameraSelect1, video1); 
     await updateCameraList(cameraSelect2, video2); 
     await startCamera(video1, 'user'); 
-    const cameraButton1 = document.getElementById('button1');
-    const video1 = document.getElementById('video1');
-    const canvas1 = document.getElementById('canvas1');
-    const resetButton = document.getElementById('reset1');
-    const button3 = document.getElementById('button3');
-    let captureCount = 0;
-    let image1;
 
     cameraButton1.addEventListener('click', async function () {
         const ctx = canvas1.getContext('2d');
