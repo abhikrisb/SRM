@@ -41,12 +41,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     await updateCameraList(cameraSelect2, video2); 
     await startCamera(video1, 'user'); 
 
-    cameraButton1.addEventListener('click', async function () {
+    camera_button1.addEventListener('click', async function () {
         const ctx = canvas1.getContext('2d');
         ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
 
         video1.style.display = "none";
-        cameraButton1.style.display = "none";
+        camera_button1.style.display = "none";
         document.getElementById('cameraSelect1').style.display = "none";
         canvas1.style.display = "block";
 
