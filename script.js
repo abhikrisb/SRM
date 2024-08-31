@@ -21,29 +21,64 @@ let tab2 = document.querySelector(".tab2"); // header2
 let cameraSelect1 = document.querySelector("#cameraSelect1"); //dropdown for the first camera
 let cameraSelect2 = document.querySelector("#cameraSelect2"); //dropdown for the second camera
 
-document.addEventListener("DOMContentLoaded", async () => {
-    // Ensure the page is loaded over HTTPS credits:StackOverflow (30 mins of research)
-    if (location.protocol !== 'https:') {
-        location.replace(`https:${location.href.substring(location.protocol.length)}`);
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    const cameraButton1 = document.getElementById('button1');
+    const video1 = document.getElementById('video1');
+    const canvas1 = document.getElementById('canvas1');
+    const resetButton = document.getElementById('reset1');
+    const button3 = document.getElementById('button3');
+    let captureCount = 0;
+    let image1;
 
-    // Check for mediaDevices support
-    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-        alert('Your browser does not support media devices.');
-        return;
-    }
+    cameraButton1.addEventListener('click', async function () {
+        const ctx = canvas1.getContext('2d');
+        ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
 
-    // Start the camera
-    tab1.style.display = "none";
-    tab1.style.display = "block";
-    tab2.style.display = "none";
-    await updateCameraList(cameraSelect1, video1); 
-    await updateCameraList(cameraSelect2, video2); 
-    await startCamera(video1, 'user'); 
-    const referenceImagePath = 'image/reference.jpg';
-    video1.addEventListener('play', () => {
-        const cap = new cv.VideoCapture(video);
+        video1.style.display = "none";
+        cameraButton1.style.display = "none";
+        document.getElementById('cameraSelect1').style.display = "none";
+        canvas1.style.display = "block";
+
+        // Capture the image data
+        image1 = canvas1.toDataURL('image/jpeg');
+        navigator.clipboard.writeText(image1)
+            .then(() => console.log('Image data URL copied to clipboard!'))
+            .catch(err => console.error('Failed to copy image data URL: ', err));
+
+        // Check for face in the image
+        await checkFace(image1);  
+        captureCount++;
+        if (captureCount >= 1) {
+            resetButton.style.display = "block"; // Show the reset button below the canvas
+            button3.style.display = "block"; // Show the continue button below the canvas
+        }
+
+        // Load the reference image
+        const referenceImagePath = 'image/reference.jpg';
         const referenceImage = new Image();
+        referenceImage.src = referenceImagePath;
+
+        referenceImage.onload = () => {
+            // Load the captured image into an Image object
+            const capturedImage = new Image();
+            capturedImage.src = image1;
+
+            capturedImage.onload = () => {
+                // Compare the images using resemble.js
+                resemble(referenceImage.src)
+                    .compareTo(capturedImage.src)
+                    .onComplete(function(data) {
+                        const similarityScore = 1 - data.misMatchPercentage / 100;
+
+                        // Display the result
+                        if (similarityScore > 0.8) { // Assuming a threshold of 0.8 for similarity
+                            alert('The ID card image is similar to the reference image.');
+                        } else {
+                            alert('The ID card image is not similar to the reference image.');
+                        }
+                    });
+            };
+        };
     });
 });
 
@@ -97,57 +132,6 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
         alert('Error accessing media devices: ' + error.message);
     }
 }
-// Event listener for the first capture button
-camera_button1.addEventListener('click', async function () {
-    const ctx = canvas1.getContext('2d');
-    ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
-
-    video1.style.display = "none";
-    camera_button1.style.display = "none";
-    cameraSelect1.style.display = "none";
-    canvas1.style.display = "block";
-
-    // Capture the image data
-    image1 = canvas1.toDataURL('image/jpeg');
-    navigator.clipboard.writeText(image1)
-        .then(() => console.log('Image data URL copied to clipboard!'))
-        .catch(err => console.error('Failed to copy image data URL: ', err));
-
-    // Check for face in the image
-    await checkFace(image1);  
-    captureCount++;
-    if (captureCount >= 1) {
-        resetButton.style.display = "block"; // Show the reset button below the canvas
-        button3.style.display = "block"; // Show the continue button below the canvas
-    }
-
-    // Load the reference image
-    const referenceImagePath = 'image/reference.jpg';
-    const referenceImage = new Image();
-    referenceImage.src = referenceImagePath;
-
-    referenceImage.onload = () => {
-        // Load the captured image into an Image object
-        const capturedImage = new Image();
-        capturedImage.src = image1;
-
-        capturedImage.onload = () => {
-            // Compare the images using resemble.js
-            resemble(referenceImage.src)
-                .compareTo(capturedImage.src)
-                .onComplete(function(data) {
-                    const similarityScore = 1 - data.misMatchPercentage / 100;
-
-                    // Display the result
-                    if (similarityScore > 0.8) { // Assuming a threshold of 0.8 for similarity
-                        alert('The ID card image is similar to the reference image.');
-                    } else {
-                        alert('The ID card image is not similar to the reference image.');
-                    }
-                });
-        };
-    };
-});
 
 // Event listener for the second capture button
 camera_button2.addEventListener('click', async function () {
