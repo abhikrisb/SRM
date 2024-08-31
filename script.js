@@ -1,4 +1,3 @@
-const fs = require('fs');
 let camera_button1 = document.querySelector("#button1"); //first capture button
 let video1 = document.querySelector("#video1"); //first video element
 let button3 = document.querySelector("#button3"); //first continue button
@@ -96,6 +95,73 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
     }
 }
 
+// Event listener for the first capture button
+import pixelmatch from 'https://esm.run/pixelmatch';
+    
+document.getElementById('camera_button1').addEventListener('click', async function () {
+    const canvas1 = document.getElementById('canvas1');
+    const video1 = document.getElementById('video1');
+    const ctx = canvas1.getContext('2d');
+    ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
+
+    video1.style.display = "none";
+    camera_button1.style.display = "none";
+    document.getElementById('cameraSelect1').style.display = "none";
+    canvas1.style.display = "block";
+
+    // Capture the image data
+    const image1 = canvas1.toDataURL('image/jpeg');
+    navigator.clipboard.writeText(image1)
+        .then(() => console.log('Image data URL copied to clipboard!'))
+        .catch(err => console.error('Failed to copy image data URL: ', err));
+
+    // Check for face in the image
+    await checkFace(image1);  
+    captureCount++;
+    if (captureCount >= 1) {
+        document.getElementById('resetButton').style.display = "block"; // Show the reset button below the canvas
+        document.getElementById('button3').style.display = "block"; // Show the continue button below the canvas
+    }
+
+    // Load reference image
+    const referenceImage = document.getElementById('referenceImage');
+
+    // Convert captured image to Image object
+    const capturedImage = new Image();
+    capturedImage.src = image1;
+    await new Promise(resolve => capturedImage.onload = resolve);
+
+    // Create canvases for images
+    const referenceCanvas = document.createElement('canvas');
+    referenceCanvas.width = referenceImage.width;
+    referenceCanvas.height = referenceImage.height;
+    const referenceCtx = referenceCanvas.getContext('2d');
+    referenceCtx.drawImage(referenceImage, 0, 0);
+
+    const capturedCanvas = document.createElement('canvas');
+    capturedCanvas.width = capturedImage.width;
+    capturedCanvas.height = capturedImage.height;
+    const capturedCtx = capturedCanvas.getContext('2d');
+    capturedCtx.drawImage(capturedImage, 0, 0);
+
+    // Compare images using pixelmatch
+    const diffCanvas = document.createElement('canvas');
+    diffCanvas.width = referenceImage.width;
+    diffCanvas.height = referenceImage.height;
+    const diffCtx = diffCanvas.getContext('2d');
+    const diff = diffCtx.createImageData(referenceImage.width, referenceImage.height);
+
+    const numDiffPixels = pixelmatch(
+        referenceCtx.getImageData(0, 0, referenceImage.width, referenceImage.height).data,
+        capturedCtx.getImageData(0, 0, capturedImage.width, capturedImage.height).data,
+        diff.data,
+        referenceImage.width,
+        referenceImage.height,
+        { threshold: 0.1 }
+    );
+
+    console.log(`Number of different pixels: ${numDiffPixels}`);
+});
 
 // camera_button1.addEventListener('click', async function () {
 //     const ctx = canvas1.getContext('2d');
