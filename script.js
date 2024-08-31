@@ -153,20 +153,20 @@ camera_button1.addEventListener('click', async function () {
     capturedCtx.drawImage(capturedImage, 0, 0);
     
     // Compare images using pixelmatch
-    const diffCanvas = document.createElement('canvas');
-    diffCanvas.width = referenceImage.width;
-    diffCanvas.height = referenceImage.height;
-    const diffCtx = diffCanvas.getContext('2d');
-    const diff = diffCtx.createImageData(referenceImage.width, referenceImage.height);
+    const referenceImageData = referenceCtx.getImageData(0, 0, referenceImage.width, referenceImage.height);
+    const capturedImageData = capturedCtx.getImageData(0, 0, capturedImage.width, capturedImage.height);
+    const diffImageData = diffCtx.createImageData(referenceImage.width, referenceImage.height);
     
     const numDiffPixels = pixelmatch(
-        referenceCtx.getImageData(0, 0, referenceImage.width, referenceImage.height).data,
-        capturedCtx.getImageData(0, 0, capturedImage.width, capturedImage.height).data,
-        diff.data,
+        referenceImageData.data,
+        capturedImageData.data,
+        diffImageData.data,
         referenceImage.width,
         referenceImage.height,
         { threshold: 0.1 }
     );
+    
+    diffCtx.putImageData(diffImageData, 0, 0);
     
     console.log(`Number of different pixels: ${numDiffPixels}`);
 });
