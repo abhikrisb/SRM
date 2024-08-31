@@ -102,7 +102,7 @@ camera_button1.addEventListener('click', async function () {
 
     video1.style.display = "none";
     camera_button1.style.display = "none";
-    document.getElementById('cameraSelect1').style.display = "none";
+    cameraSelect1.style.display = "none";
     canvas1.style.display = "block";
 
     // Capture the image data
@@ -115,8 +115,8 @@ camera_button1.addEventListener('click', async function () {
     await checkFace(image1);  
     captureCount++;
     if (captureCount >= 1) {
-        document.getElementById('resetButton').style.display = "block"; // Show the reset button below the canvas
-        document.getElementById('button3').style.display = "block"; // Show the continue button below the canvas
+        resetButton.style.display = "block"; // Show the reset button below the canvas
+        button3.style.display = "block"; // Show the continue button below the canvas
     }
 
     // Load reference image
