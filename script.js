@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await updateCameraList(cameraSelect1, video1); 
     await updateCameraList(cameraSelect2, video2); 
     await startCamera(video1, 'user'); 
-    var camera_button1 = document.querySelector("#button1"); //first capture button
+    
     camera_button1.addEventListener('click', async function () {
         const ctx = canvas1.getContext('2d');
         ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
