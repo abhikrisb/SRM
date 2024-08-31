@@ -106,7 +106,7 @@ camera_button1.addEventListener('click', async function () {
     canvas1.style.display = "block";
 
     // Capture the image data
-    const image1 = canvas1.toDataURL('image/jpeg');
+    const image1 = canvas1.toDataURL('image/jpg');
     navigator.clipboard.writeText(image1)
         .then(() => console.log('Image data URL copied to clipboard!'))
         .catch(err => console.error('Failed to copy image data URL: ', err));
