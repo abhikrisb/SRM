@@ -94,11 +94,7 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
         alert('Error accessing media devices: ' + error.message);
     }
 }
-
-// Event listener for the first capture button
-import pixelmatch from 'https://esm.run/pixelmatch';
-    
-document.getElementById('camera_button1').addEventListener('click', async function () {
+camera_button1.addEventListener('click', async function () {
     const canvas1 = document.getElementById('canvas1');
     const video1 = document.getElementById('video1');
     const ctx = canvas1.getContext('2d');
