@@ -281,36 +281,112 @@ async function submitImages() {
     }
 }
 
-async function checkFace(image) {
-    try {
-        const response = await fetch('http://localhost:5000/checkFace', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                image: image  // Image to check for face
-            }),
-        });
+// async function checkFace(image) {
+//     try {
+//         const response = await fetch('http://localhost:5000/checkFace', {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             },
+//             body: JSON.stringify({
+//                 image: image  // Image to check for face
+//             }),
+//         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Unknown error occurred');
-        }
+//         if (!response.ok) {
+//             const errorData = await response.json();
+//             throw new Error(errorData.error || 'Unknown error occurred');
+//         }
 
-        const data = await response.json();
-        console.log('Response:', data.result);
-        if (data.face_detected) {
-            alert('Face detected in the image!');
-        } else {
-            alert('No face detected in the image.');
+//         const data = await response.json();
+//         console.log('Response:', data.result);
+//         if (data.face_detected) {
+//             alert('Face detected in the image!');
+//         } else {
+//             alert('No face detected in the image.');
+//         }
+//     } catch (error) {
+//         console.error('Error:', error);
+//         alert(`Error: ${error.message}`);
+//     }
+// }
+// Add your Face++ API key and secret
+// Load environment variables from .env file
+function loadEnv() {
+    const fs = require('fs');
+    const path = require('path');
+    const envPath = path.resolve(__dirname, '.env');
+    const envData = fs.readFileSync(envPath, 'utf8');
+    const envVars = envData.split('\n');
+
+    envVars.forEach(line => {
+        const [key, value] = line.split('=');
+        if (key && value) {
+            process.env[key.trim()] = value.trim();
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert(`Error: ${error.message}`);
-    }
+    });
 }
 
+loadEnv();
+
+const apiKey = process.env.FACE_PLUS_PLUS_API_KEY;
+const apiSecret = process.env.FACE_PLUS_PLUS_API_SECRET;
+
+async function checkFace(imageData) {
+    try {
+        // Send the image to the Face++ API for face detection
+        const response = await fetch('https://api-us.faceplusplus.com/facepp/v3/detect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                api_key: apiKey,
+                api_secret: apiSecret,
+                image_base64: imageData.split(',')[1], // Remove the data URL prefix
+                return_attributes: 'none'
+            })
+        });
+
+        const data = await response.json();
+        const faces = data.faces;
+
+        if (faces.length === 1) {
+            const faceToken = faces[0].face_token;
+
+            // Store the face data (this could be in a variable or local storage)
+            localStorage.setItem('storedFaceToken', faceToken);
+
+            // Compare the stored face data with the face in the face capture area
+            const storedFaceToken = localStorage.getItem('storedFaceToken');
+
+            const matchResponse = await fetch('https://api-us.faceplusplus.com/facepp/v3/compare', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    api_key: apiKey,
+                    api_secret: apiSecret,
+                    face_token1: storedFaceToken,
+                    face_token2: faceToken
+                })
+            });
+
+            const matchResult = await matchResponse.json();
+
+            if (matchResult.confidence > 80) { // Adjust the confidence threshold as needed
+                console.log('Face matched successfully!');
+            } else {
+                console.log('Face did not match.');
+            }
+        } else {
+            console.error('No face or multiple faces detected.');
+        }
+    } catch (error) {
+        console.error('Error detecting face:', error);
+    }
+}
 
 
 // Add event listener for the submit button
