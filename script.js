@@ -144,28 +144,38 @@ camera_button1.addEventListener('click', async function () {
     const capturedCtx = capturedCanvas.getContext('2d');
     capturedCtx.drawImage(capturedImage, 0, 0);
     
-    // Compare images using pixelmatch
-    const referenceImageData = referenceCtx.getImageData(0, 0, referenceImage.width, referenceImage.height);
-    const capturedImageData = capturedCtx.getImageData(0, 0, capturedImage.width, capturedImage.height);
-    const diffImageData = referenceCtx.createImageData(referenceImage.width, referenceImage.height);
+    // Convert canvas images to OpenCV Mat
+    const referenceMat = cv.imread(referenceCanvas);
+    const capturedMat = cv.imread(capturedCanvas);
     
-    const numDiffPixels = pixelmatch(
-        referenceImageData.data,
-        capturedImageData.data,
-        diffImageData.data,
-        referenceImage.width,
-        referenceImage.height,
-        { threshold: 0.1 }
-    );
+    // Convert images to grayscale
+    const referenceGray = new cv.Mat();
+    const capturedGray = new cv.Mat();
+    cv.cvtColor(referenceMat, referenceGray, cv.COLOR_RGBA2GRAY);
+    cv.cvtColor(capturedMat, capturedGray, cv.COLOR_RGBA2GRAY);
     
-    console.log(`Number of different pixels: ${numDiffPixels}`);
+    const score = new cv.Mat();
+    const diff = new cv.Mat();
+    cv.absdiff(referenceGray, capturedGray, diff);
+    cv.threshold(diff, diff, 0, 255, cv.THRESH_BINARY_INV);
+    const nonZero = cv.countNonZero(diff);
     
-    if (numDiffPixels < 1000) { // Adjust the threshold as needed
+    console.log(`Number of different pixels: ${nonZero}`);
+    
+    if (nonZero < 1000) { // Adjust the threshold as needed
         console.log('Images are similar, proceeding to face check.');
         await checkFace(image1);
     } else {
         console.log('Images are not similar, skipping face check.');
     }
+
+    // Clean up
+    referenceMat.delete();
+    capturedMat.delete();
+    referenceGray.delete();
+    capturedGray.delete();
+    score.delete();
+    diff.delete();
 
     captureCount++;
     if (captureCount >= 1) {
