@@ -105,6 +105,9 @@ function onOpenCvReady() {
     openCvReady = true;
 }
 
+window.onOpenCvReady = onOpenCvReady;
+
+
 camera_button1.addEventListener('click', async function () {
     if (!openCvReady) {
         console.error("OpenCV.js is not ready yet. Please try again in a moment.");
