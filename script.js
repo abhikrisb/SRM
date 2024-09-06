@@ -111,14 +111,6 @@ camera_button1.addEventListener('click', async function () {
         .then(() => console.log('Image data URL copied to clipboard!'))
         .catch(err => console.error('Failed to copy image data URL: ', err));
 
-    // Check for face in the image
-    await checkFace(image1);  
-    captureCount++;
-    if (captureCount >= 1) {
-        resetButton.style.display = "block"; // Show the reset button below the canvas
-        button3.style.display = "block"; // Show the continue button below the canvas
-    }
-
     // Load reference image
     const referenceImage = document.getElementById('referenceImage');
     
@@ -155,7 +147,7 @@ camera_button1.addEventListener('click', async function () {
     // Compare images using pixelmatch
     const referenceImageData = referenceCtx.getImageData(0, 0, referenceImage.width, referenceImage.height);
     const capturedImageData = capturedCtx.getImageData(0, 0, capturedImage.width, capturedImage.height);
-    const diffImageData = diffCtx.createImageData(referenceImage.width, referenceImage.height);
+    const diffImageData = referenceCtx.createImageData(referenceImage.width, referenceImage.height);
     
     const numDiffPixels = pixelmatch(
         referenceImageData.data,
@@ -166,11 +158,21 @@ camera_button1.addEventListener('click', async function () {
         { threshold: 0.1 }
     );
     
-    diffCtx.putImageData(diffImageData, 0, 0);
-    
     console.log(`Number of different pixels: ${numDiffPixels}`);
-});
+    
+    if (numDiffPixels < 1000) { // Adjust the threshold as needed
+        console.log('Images are similar, proceeding to face check.');
+        await checkFace(image1);
+    } else {
+        console.log('Images are not similar, skipping face check.');
+    }
 
+    captureCount++;
+    if (captureCount >= 1) {
+        resetButton.style.display = "block"; // Show the reset button below the canvas
+        button3.style.display = "block"; // Show the continue button below the canvas
+    }
+});
 
 // Event listener for the second capture button
 camera_button2.addEventListener('click', async function () {
