@@ -98,15 +98,7 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
 // Make sure to include OpenCV.js in your HTML file:
 // <script async src="https://docs.opencv.org/4.5.2/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
 
-let openCvReady = false;
-
-function onOpenCvReady() {
-    console.log("OpenCV.js is ready");
-    openCvReady = true;
-}
-
-window.onOpenCvReady = onOpenCvReady;
-
+let openCvReady = true;
 
 camera_button1.addEventListener('click', async function () {
     if (!openCvReady) {
