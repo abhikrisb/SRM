@@ -94,106 +94,90 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
         alert('Error accessing media devices: ' + error.message);
     }
 }
-// Function to wait for OpenCV.js to be ready
-function onOpenCvReady(callback) {
-    if (cv.getBuildInformation) {
-        callback();
-    } else {
-        document.addEventListener('opencvReady', callback);
-    }
-}
 
-// Your existing code wrapped in the onOpenCvReady function
-onOpenCvReady(async function () {
-    camera_button1.addEventListener('click', async function () {
-        const canvas1 = document.getElementById('canvas1');
-        const video1 = document.getElementById('video1');
-        const ctx = canvas1.getContext('2d');
-        ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
+camera_button1.addEventListener('click', async function () {
+    const canvas1 = document.getElementById('canvas1');
+    const video1 = document.getElementById('video1');
+    const ctx = canvas1.getContext('2d');
+    ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
 
-        video1.style.display = "none";
-        camera_button1.style.display = "none";
-        cameraSelect1.style.display = "none";
-        canvas1.style.display = "block";
+    video1.style.display = "none";
+    camera_button1.style.display = "none";
+    cameraSelect1.style.display = "none";
+    canvas1.style.display = "block";
 
-        // Capture the image data
-        const image1 = canvas1.toDataURL('image/jpg');
-        navigator.clipboard.writeText(image1)
-            .then(() => console.log('Image data URL copied to clipboard!'))
-            .catch(err => console.error('Failed to copy image data URL: ', err));
+    // Capture the image data
+    const image1 = canvas1.toDataURL('image/jpg');
+    navigator.clipboard.writeText(image1)
+        .then(() => console.log('Image data URL copied to clipboard!'))
+        .catch(err => console.error('Failed to copy image data URL: ', err));
 
-        // Load reference image
-        const referenceImage = document.getElementById('referenceImage');
-        
-        // Convert captured image to Image object
-        const capturedImage = new Image();
-        capturedImage.src = image1;
-        await new Promise(resolve => capturedImage.onload = resolve);
-        
-        // Check if image sizes match
-        if (referenceImage.width !== capturedImage.width || referenceImage.height !== capturedImage.height) {
-            // Resize captured image to match reference image dimensions
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = referenceImage.width;
-            tempCanvas.height = referenceImage.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(capturedImage, 0, 0, referenceImage.width, referenceImage.height);
-            capturedImage.src = tempCanvas.toDataURL();
-            await new Promise(resolve => capturedImage.onload = resolve);
-        }
-        
-        // Create canvases for images
-        const referenceCanvas = document.createElement('canvas');
-        referenceCanvas.width = referenceImage.width;
-        referenceCanvas.height = referenceImage.height;
-        const referenceCtx = referenceCanvas.getContext('2d');
-        referenceCtx.drawImage(referenceImage, 0, 0);
-        
-        const capturedCanvas = document.createElement('canvas');
-        capturedCanvas.width = capturedImage.width;
-        capturedCanvas.height = capturedImage.height;
-        const capturedCtx = capturedCanvas.getContext('2d');
-        capturedCtx.drawImage(capturedImage, 0, 0);
-        
-        // Convert canvas images to OpenCV Mat
-        const referenceMat = cv.imread(referenceCanvas);
-        const capturedMat = cv.imread(capturedCanvas);
-        
-        // Convert images to grayscale
-        const referenceGray = new cv.Mat();
-        const capturedGray = new cv.Mat();
-        cv.cvtColor(referenceMat, referenceGray, cv.COLOR_RGBA2GRAY);
-        cv.cvtColor(capturedMat, capturedGray, cv.COLOR_RGBA2GRAY);
-        
-        const score = new cv.Mat();
-        const diff = new cv.Mat();
-        cv.absdiff(referenceGray, capturedGray, diff);
-        cv.threshold(diff, diff, 0, 255, cv.THRESH_BINARY_INV);
-        const nonZero = cv.countNonZero(diff);
-        
-        console.log(`Number of different pixels: ${nonZero}`);
-        
-        if (nonZero < 1000) { // Adjust the threshold as needed
-            console.log('Images are similar, proceeding to face check.');
-            await checkFace(image1);
+    // Load reference image
+    const referenceImage = document.getElementById('referenceImage');
+    
+    // Convert captured image to Image object
+    const capturedImage = new Image();
+    capturedImage.src = image1;
+    await new Promise(resolve => capturedImage.onload = resolve);
+    
+    // Ensure OpenCV.js is loaded
+    await new Promise(resolve => {
+        if (window.cv) {
+            resolve();
         } else {
-            console.log('Images are not similar, skipping face check.');
-        }
-
-        // Clean up
-        referenceMat.delete();
-        capturedMat.delete();
-        referenceGray.delete();
-        capturedGray.delete();
-        score.delete();
-        diff.delete();
-
-        captureCount++;
-        if (captureCount >= 1) {
-            resetButton.style.display = "block"; // Show the reset button below the canvas
-            button3.style.display = "block"; // Show the continue button below the canvas
+            document.addEventListener('opencv-loaded', resolve, { once: true });
         }
     });
+
+    // Convert images to OpenCV format
+    let capturedMat = cv.imread(capturedImage);
+    let referenceMat = cv.imread(referenceImage);
+
+    // Resize captured image if necessary
+    if (capturedMat.cols !== referenceMat.cols || capturedMat.rows !== referenceMat.rows) {
+        let dsize = new cv.Size(referenceMat.cols, referenceMat.rows);
+        cv.resize(capturedMat, capturedMat, dsize, 0, 0, cv.INTER_AREA);
+    }
+
+    // Convert images to grayscale
+    let capturedGray = new cv.Mat();
+    let referenceGray = new cv.Mat();
+    cv.cvtColor(capturedMat, capturedGray, cv.COLOR_RGBA2GRAY);
+    cv.cvtColor(referenceMat, referenceGray, cv.COLOR_RGBA2GRAY);
+
+    // Compute the absolute difference between the two images
+    let diff = new cv.Mat();
+    cv.absdiff(capturedGray, referenceGray, diff);
+
+    // Apply a threshold to create a binary image
+    let threshold = new cv.Mat();
+    cv.threshold(diff, threshold, 30, 255, cv.THRESH_BINARY);
+
+    // Count non-zero pixels (differences)
+    let numDiffPixels = cv.countNonZero(threshold);
+
+    console.log(`Number of different pixels: ${numDiffPixels}`);
+    
+    if (numDiffPixels < 1000) { // Adjust the threshold as needed
+        console.log('Images are similar, proceeding to face check.');
+        await checkFace(image1);
+    } else {
+        console.log('Images are not similar, skipping face check.');
+    }
+
+    // Clean up
+    capturedMat.delete();
+    referenceMat.delete();
+    capturedGray.delete();
+    referenceGray.delete();
+    diff.delete();
+    threshold.delete();
+
+    captureCount++;
+    if (captureCount >= 1) {
+        resetButton.style.display = "block";
+        button3.style.display = "block";
+    }
 });
 
 // Event listener for the second capture button
