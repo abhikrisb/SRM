@@ -310,27 +310,10 @@ async function submitImages() {
 //         alert(`Error: ${error.message}`);
 //     }
 // }
-// Add your Face++ API key and secret
-// Load environment variables from .env file
-function loadEnv() {
-    const fs = require('fs');
-    const path = require('path');
-    const envPath = path.resolve(__dirname, '.env');
-    const envData = fs.readFileSync(envPath, 'utf8');
-    const envVars = envData.split('\n');
+import config from './config.js';
 
-    envVars.forEach(line => {
-        const [key, value] = line.split('=');
-        if (key && value) {
-            process.env[key.trim()] = value.trim();
-        }
-    });
-}
-
-loadEnv();
-
-const apiKey = process.env.FACE_PLUS_PLUS_API_KEY;
-const apiSecret = process.env.FACE_PLUS_PLUS_API_SECRET;
+const apiKey = config.FACE_PLUS_PLUS_API_KEY;
+const apiSecret = config.FACE_PLUS_PLUS_API_SECRET;
 
 async function checkFace(imageData) {
     try {

@@ -1,0 +1,7 @@
+// config.js
+const config = {
+    FACE_PLUS_PLUS_API_KEY: 'k8zXc2udiNK92TAqaPaEsVPzPoSPld3k',
+    FACE_PLUS_PLUS_API_SECRET: 'XTBYQqlTu3NmDQpb0sCK5FZk1bj3RlMN'
+};
+
+export default config;
