@@ -94,94 +94,106 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
         alert('Error accessing media devices: ' + error.message);
     }
 }
-camera_button1.addEventListener('click', async function () {
-    const canvas1 = document.getElementById('canvas1');
-    const video1 = document.getElementById('video1');
-    const ctx = canvas1.getContext('2d');
-    ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
-
-    video1.style.display = "none";
-    camera_button1.style.display = "none";
-    cameraSelect1.style.display = "none";
-    canvas1.style.display = "block";
-
-    // Capture the image data
-    const image1 = canvas1.toDataURL('image/jpg');
-    navigator.clipboard.writeText(image1)
-        .then(() => console.log('Image data URL copied to clipboard!'))
-        .catch(err => console.error('Failed to copy image data URL: ', err));
-
-    // Load reference image
-    const referenceImage = document.getElementById('referenceImage');
-    
-    // Convert captured image to Image object
-    const capturedImage = new Image();
-    capturedImage.src = image1;
-    await new Promise(resolve => capturedImage.onload = resolve);
-    
-    // Check if image sizes match
-    if (referenceImage.width !== capturedImage.width || referenceImage.height !== capturedImage.height) {
-        // Resize captured image to match reference image dimensions
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = referenceImage.width;
-        tempCanvas.height = referenceImage.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.drawImage(capturedImage, 0, 0, referenceImage.width, referenceImage.height);
-        capturedImage.src = tempCanvas.toDataURL();
-        await new Promise(resolve => capturedImage.onload = resolve);
-    }
-    
-    // Create canvases for images
-    const referenceCanvas = document.createElement('canvas');
-    referenceCanvas.width = referenceImage.width;
-    referenceCanvas.height = referenceImage.height;
-    const referenceCtx = referenceCanvas.getContext('2d');
-    referenceCtx.drawImage(referenceImage, 0, 0);
-    
-    const capturedCanvas = document.createElement('canvas');
-    capturedCanvas.width = capturedImage.width;
-    capturedCanvas.height = capturedImage.height;
-    const capturedCtx = capturedCanvas.getContext('2d');
-    capturedCtx.drawImage(capturedImage, 0, 0);
-    
-    // Convert canvas images to OpenCV Mat
-    const referenceMat = cv.imread(referenceCanvas);
-    const capturedMat = cv.imread(capturedCanvas);
-    
-    // Convert images to grayscale
-    const referenceGray = new cv.Mat();
-    const capturedGray = new cv.Mat();
-    cv.cvtColor(referenceMat, referenceGray, cv.COLOR_RGBA2GRAY);
-    cv.cvtColor(capturedMat, capturedGray, cv.COLOR_RGBA2GRAY);
-    
-    const score = new cv.Mat();
-    const diff = new cv.Mat();
-    cv.absdiff(referenceGray, capturedGray, diff);
-    cv.threshold(diff, diff, 0, 255, cv.THRESH_BINARY_INV);
-    const nonZero = cv.countNonZero(diff);
-    
-    console.log(`Number of different pixels: ${nonZero}`);
-    
-    if (nonZero < 1000) { // Adjust the threshold as needed
-        console.log('Images are similar, proceeding to face check.');
-        await checkFace(image1);
+// Function to wait for OpenCV.js to be ready
+function onOpenCvReady(callback) {
+    if (cv.getBuildInformation) {
+        callback();
     } else {
-        console.log('Images are not similar, skipping face check.');
+        document.addEventListener('opencvReady', callback);
     }
+}
 
-    // Clean up
-    referenceMat.delete();
-    capturedMat.delete();
-    referenceGray.delete();
-    capturedGray.delete();
-    score.delete();
-    diff.delete();
+// Your existing code wrapped in the onOpenCvReady function
+onOpenCvReady(async function () {
+    camera_button1.addEventListener('click', async function () {
+        const canvas1 = document.getElementById('canvas1');
+        const video1 = document.getElementById('video1');
+        const ctx = canvas1.getContext('2d');
+        ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
 
-    captureCount++;
-    if (captureCount >= 1) {
-        resetButton.style.display = "block"; // Show the reset button below the canvas
-        button3.style.display = "block"; // Show the continue button below the canvas
-    }
+        video1.style.display = "none";
+        camera_button1.style.display = "none";
+        cameraSelect1.style.display = "none";
+        canvas1.style.display = "block";
+
+        // Capture the image data
+        const image1 = canvas1.toDataURL('image/jpg');
+        navigator.clipboard.writeText(image1)
+            .then(() => console.log('Image data URL copied to clipboard!'))
+            .catch(err => console.error('Failed to copy image data URL: ', err));
+
+        // Load reference image
+        const referenceImage = document.getElementById('referenceImage');
+        
+        // Convert captured image to Image object
+        const capturedImage = new Image();
+        capturedImage.src = image1;
+        await new Promise(resolve => capturedImage.onload = resolve);
+        
+        // Check if image sizes match
+        if (referenceImage.width !== capturedImage.width || referenceImage.height !== capturedImage.height) {
+            // Resize captured image to match reference image dimensions
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = referenceImage.width;
+            tempCanvas.height = referenceImage.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(capturedImage, 0, 0, referenceImage.width, referenceImage.height);
+            capturedImage.src = tempCanvas.toDataURL();
+            await new Promise(resolve => capturedImage.onload = resolve);
+        }
+        
+        // Create canvases for images
+        const referenceCanvas = document.createElement('canvas');
+        referenceCanvas.width = referenceImage.width;
+        referenceCanvas.height = referenceImage.height;
+        const referenceCtx = referenceCanvas.getContext('2d');
+        referenceCtx.drawImage(referenceImage, 0, 0);
+        
+        const capturedCanvas = document.createElement('canvas');
+        capturedCanvas.width = capturedImage.width;
+        capturedCanvas.height = capturedImage.height;
+        const capturedCtx = capturedCanvas.getContext('2d');
+        capturedCtx.drawImage(capturedImage, 0, 0);
+        
+        // Convert canvas images to OpenCV Mat
+        const referenceMat = cv.imread(referenceCanvas);
+        const capturedMat = cv.imread(capturedCanvas);
+        
+        // Convert images to grayscale
+        const referenceGray = new cv.Mat();
+        const capturedGray = new cv.Mat();
+        cv.cvtColor(referenceMat, referenceGray, cv.COLOR_RGBA2GRAY);
+        cv.cvtColor(capturedMat, capturedGray, cv.COLOR_RGBA2GRAY);
+        
+        const score = new cv.Mat();
+        const diff = new cv.Mat();
+        cv.absdiff(referenceGray, capturedGray, diff);
+        cv.threshold(diff, diff, 0, 255, cv.THRESH_BINARY_INV);
+        const nonZero = cv.countNonZero(diff);
+        
+        console.log(`Number of different pixels: ${nonZero}`);
+        
+        if (nonZero < 1000) { // Adjust the threshold as needed
+            console.log('Images are similar, proceeding to face check.');
+            await checkFace(image1);
+        } else {
+            console.log('Images are not similar, skipping face check.');
+        }
+
+        // Clean up
+        referenceMat.delete();
+        capturedMat.delete();
+        referenceGray.delete();
+        capturedGray.delete();
+        score.delete();
+        diff.delete();
+
+        captureCount++;
+        if (captureCount >= 1) {
+            resetButton.style.display = "block"; // Show the reset button below the canvas
+            button3.style.display = "block"; // Show the continue button below the canvas
+        }
+    });
 });
 
 // Event listener for the second capture button
