@@ -95,88 +95,106 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
     }
 }
 
+// Make sure to include OpenCV.js in your HTML file:
+// <script async src="https://docs.opencv.org/4.5.2/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+
+let openCvReady = false;
+
+function onOpenCvReady() {
+    console.log("OpenCV.js is ready");
+    openCvReady = true;
+}
+
 camera_button1.addEventListener('click', async function () {
-    const canvas1 = document.getElementById('canvas1');
-    const video1 = document.getElementById('video1');
-    const ctx = canvas1.getContext('2d');
-    ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
+    if (!openCvReady) {
+        console.error("OpenCV.js is not ready yet. Please try again in a moment.");
+        return;
+    }
 
-    video1.style.display = "none";
-    camera_button1.style.display = "none";
-    cameraSelect1.style.display = "none";
-    canvas1.style.display = "block";
+    try {
+        const canvas1 = document.getElementById('canvas1');
+        const video1 = document.getElementById('video1');
+        const ctx = canvas1.getContext('2d');
+        ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
 
-    // Capture the image data
-    const image1 = canvas1.toDataURL('image/jpg');
-    navigator.clipboard.writeText(image1)
-        .then(() => console.log('Image data URL copied to clipboard!'))
-        .catch(err => console.error('Failed to copy image data URL: ', err));
+        video1.style.display = "none";
+        camera_button1.style.display = "none";
+        cameraSelect1.style.display = "none";
+        canvas1.style.display = "block";
 
-    // Load reference image
-    const referenceImage = document.getElementById('referenceImage');
-    
-    // Convert captured image to Image object
-    const capturedImage = new Image();
-    capturedImage.src = image1;
-    await new Promise(resolve => capturedImage.onload = resolve);
-    
-    // Ensure OpenCV.js is loaded
-    await new Promise(resolve => {
-        if (window.cv) {
-            resolve();
-        } else {
-            document.addEventListener('opencv-loaded', resolve, { once: true });
+        // Capture the image data
+        const image1 = canvas1.toDataURL('image/png');
+        await navigator.clipboard.writeText(image1);
+        console.log('Image data URL copied to clipboard!');
+
+        // Load reference image
+        const referenceImage = document.getElementById('referenceImage');
+        
+        // Convert captured image to Image object
+        const capturedImage = new Image();
+        capturedImage.src = image1;
+        await new Promise((resolve, reject) => {
+            capturedImage.onload = resolve;
+            capturedImage.onerror = reject;
+        });
+
+        // Ensure images are loaded before processing
+        await new Promise((resolve) => {
+            if (referenceImage.complete) resolve();
+            else referenceImage.onload = resolve;
+        });
+
+        // Convert images to OpenCV format
+        let capturedMat = cv.imread(capturedImage);
+        let referenceMat = cv.imread(referenceImage);
+
+        // Resize captured image if necessary
+        if (capturedMat.cols !== referenceMat.cols || capturedMat.rows !== referenceMat.rows) {
+            let dsize = new cv.Size(referenceMat.cols, referenceMat.rows);
+            cv.resize(capturedMat, capturedMat, dsize, 0, 0, cv.INTER_AREA);
         }
-    });
 
-    // Convert images to OpenCV format
-    let capturedMat = cv.imread(capturedImage);
-    let referenceMat = cv.imread(referenceImage);
+        // Convert images to grayscale
+        let capturedGray = new cv.Mat();
+        let referenceGray = new cv.Mat();
+        cv.cvtColor(capturedMat, capturedGray, cv.COLOR_RGBA2GRAY);
+        cv.cvtColor(referenceMat, referenceGray, cv.COLOR_RGBA2GRAY);
 
-    // Resize captured image if necessary
-    if (capturedMat.cols !== referenceMat.cols || capturedMat.rows !== referenceMat.rows) {
-        let dsize = new cv.Size(referenceMat.cols, referenceMat.rows);
-        cv.resize(capturedMat, capturedMat, dsize, 0, 0, cv.INTER_AREA);
-    }
+        // Compute the absolute difference between the two images
+        let diff = new cv.Mat();
+        cv.absdiff(capturedGray, referenceGray, diff);
 
-    // Convert images to grayscale
-    let capturedGray = new cv.Mat();
-    let referenceGray = new cv.Mat();
-    cv.cvtColor(capturedMat, capturedGray, cv.COLOR_RGBA2GRAY);
-    cv.cvtColor(referenceMat, referenceGray, cv.COLOR_RGBA2GRAY);
+        // Apply a threshold to create a binary image
+        let threshold = new cv.Mat();
+        cv.threshold(diff, threshold, 30, 255, cv.THRESH_BINARY);
 
-    // Compute the absolute difference between the two images
-    let diff = new cv.Mat();
-    cv.absdiff(capturedGray, referenceGray, diff);
+        // Count non-zero pixels (differences)
+        let numDiffPixels = cv.countNonZero(threshold);
 
-    // Apply a threshold to create a binary image
-    let threshold = new cv.Mat();
-    cv.threshold(diff, threshold, 30, 255, cv.THRESH_BINARY);
+        console.log(`Number of different pixels: ${numDiffPixels}`);
+        
+        if (numDiffPixels < 1000) { // Adjust the threshold as needed
+            console.log('Images are similar, proceeding to face check.');
+            await checkFace(image1);
+        } else {
+            console.log('Images are not similar, skipping face check.');
+        }
 
-    // Count non-zero pixels (differences)
-    let numDiffPixels = cv.countNonZero(threshold);
+        // Clean up
+        capturedMat.delete();
+        referenceMat.delete();
+        capturedGray.delete();
+        referenceGray.delete();
+        diff.delete();
+        threshold.delete();
 
-    console.log(`Number of different pixels: ${numDiffPixels}`);
-    
-    if (numDiffPixels < 1000) { // Adjust the threshold as needed
-        console.log('Images are similar, proceeding to face check.');
-        await checkFace(image1);
-    } else {
-        console.log('Images are not similar, skipping face check.');
-    }
-
-    // Clean up
-    capturedMat.delete();
-    referenceMat.delete();
-    capturedGray.delete();
-    referenceGray.delete();
-    diff.delete();
-    threshold.delete();
-
-    captureCount++;
-    if (captureCount >= 1) {
-        resetButton.style.display = "block";
-        button3.style.display = "block";
+        captureCount++;
+        if (captureCount >= 1) {
+            resetButton.style.display = "block";
+            button3.style.display = "block";
+        }
+    } catch (error) {
+        console.error("An error occurred during image processing:", error);
     }
 });
 
