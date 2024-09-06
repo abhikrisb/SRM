@@ -97,15 +97,7 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
 
 
 
-let openCvReady = false;
-
-function onOpenCvReady() {
-    console.log("OpenCV.js is ready");
-    openCvReady = true;
-}
-
-window.onOpenCvReady = onOpenCvReady;
-
+let openCvReady = true;
 
 camera_button1.addEventListener('click', async function () {
     if (!openCvReady) {
