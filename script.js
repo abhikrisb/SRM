@@ -95,10 +95,17 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
     }
 }
 
-// Make sure to include OpenCV.js in your HTML file:
-// <script async src="https://docs.opencv.org/4.5.2/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
 
-let openCvReady = true;
+
+let openCvReady = false;
+
+function onOpenCvReady() {
+    console.log("OpenCV.js is ready");
+    openCvReady = true;
+}
+
+window.onOpenCvReady = onOpenCvReady;
+
 
 camera_button1.addEventListener('click', async function () {
     if (!openCvReady) {
@@ -107,6 +114,8 @@ camera_button1.addEventListener('click', async function () {
     }
 
     try {
+        console.log("OpenCV version:", cv.version);
+        
         const canvas1 = document.getElementById('canvas1');
         const video1 = document.getElementById('video1');
         const ctx = canvas1.getContext('2d');
@@ -117,36 +126,35 @@ camera_button1.addEventListener('click', async function () {
         cameraSelect1.style.display = "none";
         canvas1.style.display = "block";
 
-        // Capture the image data
-        const image1 = canvas1.toDataURL('image/png');
-        await navigator.clipboard.writeText(image1);
-        console.log('Image data URL copied to clipboard!');
-
         // Load reference image
         const referenceImage = document.getElementById('referenceImage');
         
-        // Convert captured image to Image object
-        const capturedImage = new Image();
-        capturedImage.src = image1;
-        await new Promise((resolve, reject) => {
-            capturedImage.onload = resolve;
-            capturedImage.onerror = reject;
-        });
-
-        // Ensure images are loaded before processing
+        // Ensure reference image is loaded
         await new Promise((resolve) => {
             if (referenceImage.complete) resolve();
             else referenceImage.onload = resolve;
         });
 
-        // Convert images to OpenCV format
-        let capturedMat = cv.imread(capturedImage);
-        let referenceMat = cv.imread(referenceImage);
+        // Create Mat objects manually
+        let capturedMat = cv.matFromImageData(ctx.getImageData(0, 0, canvas1.width, canvas1.height));
+        
+        let referenceCanvas = document.createElement('canvas');
+        referenceCanvas.width = referenceImage.width;
+        referenceCanvas.height = referenceImage.height;
+        let referenceCtx = referenceCanvas.getContext('2d');
+        referenceCtx.drawImage(referenceImage, 0, 0);
+        let referenceMat = cv.matFromImageData(referenceCtx.getImageData(0, 0, referenceImage.width, referenceImage.height));
+
+        console.log("Captured image size:", capturedMat.cols, "x", capturedMat.rows);
+        console.log("Reference image size:", referenceMat.cols, "x", referenceMat.rows);
 
         // Resize captured image if necessary
         if (capturedMat.cols !== referenceMat.cols || capturedMat.rows !== referenceMat.rows) {
             let dsize = new cv.Size(referenceMat.cols, referenceMat.rows);
-            cv.resize(capturedMat, capturedMat, dsize, 0, 0, cv.INTER_AREA);
+            let resizedMat = new cv.Mat();
+            cv.resize(capturedMat, resizedMat, dsize, 0, 0, cv.INTER_AREA);
+            capturedMat.delete();
+            capturedMat = resizedMat;
         }
 
         // Convert images to grayscale
@@ -170,7 +178,7 @@ camera_button1.addEventListener('click', async function () {
         
         if (numDiffPixels < 1000) { // Adjust the threshold as needed
             console.log('Images are similar, proceeding to face check.');
-            await checkFace(image1);
+            await checkFace(canvas1.toDataURL('image/png'));
         } else {
             console.log('Images are not similar, skipping face check.');
         }
