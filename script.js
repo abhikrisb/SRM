@@ -20,14 +20,13 @@ let tab2 = document.querySelector(".tab2"); // header2
 
 let cameraSelect1 = document.querySelector("#cameraSelect1"); //dropdown for the first camera
 let cameraSelect2 = document.querySelector("#cameraSelect2"); //dropdown for the second camera
-import pixelmatch from 'https://esm.run/pixelmatch';
-
+let image1FaceData; // Store face data for the first image
 
 document.addEventListener("DOMContentLoaded", async () => {
     // Ensure the page is loaded over HTTPS credits:StackOverflow (30 mins of research)
-    if (location.protocol !== 'https:') {
-        location.replace(`https:${location.href.substring(location.protocol.length)}`);
-    }
+    // if (location.protocol !== 'https:') {
+    //     location.replace(`https:${location.href.substring(location.protocol.length)}`);
+    // }
 
     // Check for mediaDevices support
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
@@ -96,98 +95,70 @@ async function startCamera(videoElement, facingModeOrDeviceId) {
 }
 
 
+import config from './config.js';
 
-let openCvReady = true;
+// Use the API keys from the config
+const faceApiKey = config.faceApiKey;
+const faceApiEndpoint = config.faceApiEndpoint;
+const visionApiKey = config.visionApiKey;
+
+
+// Function to detect faces using Azure Face API
+async function detectFaces(imageUrl) {
+    // Fetch the image as binary data
+    const response = await fetch(imageUrl);
+    const imageData = await response.arrayBuffer();
+
+    const requestBody = new Uint8Array(imageData);
+
+    const apiResponse = await fetch(`${faceApiEndpoint}/face/v1.0/detect`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/octet-stream',
+            'Ocp-Apim-Subscription-Key': faceApiKey
+        },
+        body: requestBody
+    });
+
+    const data = await apiResponse.json();
+    console.log('Face API Response:', data); // Log the entire response
+    return data;
+}
+
+// Function to draw rectangles around detected faces
+function drawFaces(ctx, faces) {
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    faces.forEach(face => {
+        const { left, top, width, height } = face.faceRectangle;
+        ctx.strokeRect(left, top, width, height);
+    });
+}
+
 
 camera_button1.addEventListener('click', async function () {
-    if (!openCvReady) {
-        console.error("OpenCV.js is not ready yet. Please try again in a moment.");
-        return;
-    }
-
     try {
-        console.log("OpenCV version:", cv.version);
-        
-        const canvas1 = document.getElementById('canvas1');
-        const video1 = document.getElementById('video1');
         const ctx = canvas1.getContext('2d');
         ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
-
         video1.style.display = "none";
         camera_button1.style.display = "none";
+        canvas1.style.display = "block"; // Show the canvas
+        resetButton.style.display = "block";
+        button3.style.display = "block";
         cameraSelect1.style.display = "none";
-        canvas1.style.display = "block";
+        // Capture the image from the canvas
+        let capturedImage = canvas1.toDataURL('image/png');
 
-        // Load reference image
-        const referenceImage = document.getElementById('referenceImage');
-        
-        // Ensure reference image is loaded
-        await new Promise((resolve) => {
-            if (referenceImage.complete) resolve();
-            else referenceImage.onload = resolve;
-        });
+        // Extract text from the ID card image
+        let extractedText = await extractTextFromImage(capturedImage);
+        console.log('Extracted Text:', extractedText);
+        // Detect faces in the captured image
+        let faceData = await detectFaces(capturedImage);
+        console.log('Detected Face Data:', faceData);
+        drawFaces(ctx, faceData);
+        // Store the face data for future use
+        image1FaceData = faceData;
 
-        // Create Mat objects manually
-        let capturedMat = cv.matFromImageData(ctx.getImageData(0, 0, canvas1.width, canvas1.height));
-        
-        let referenceCanvas = document.createElement('canvas');
-        referenceCanvas.width = referenceImage.width;
-        referenceCanvas.height = referenceImage.height;
-        let referenceCtx = referenceCanvas.getContext('2d');
-        referenceCtx.drawImage(referenceImage, 0, 0);
-        let referenceMat = cv.matFromImageData(referenceCtx.getImageData(0, 0, referenceImage.width, referenceImage.height));
-
-        console.log("Captured image size:", capturedMat.cols, "x", capturedMat.rows);
-        console.log("Reference image size:", referenceMat.cols, "x", referenceMat.rows);
-
-        // Resize captured image if necessary
-        if (capturedMat.cols !== referenceMat.cols || capturedMat.rows !== referenceMat.rows) {
-            let dsize = new cv.Size(referenceMat.cols, referenceMat.rows);
-            let resizedMat = new cv.Mat();
-            cv.resize(capturedMat, resizedMat, dsize, 0, 0, cv.INTER_AREA);
-            capturedMat.delete();
-            capturedMat = resizedMat;
-        }
-
-        // Convert images to grayscale
-        let capturedGray = new cv.Mat();
-        let referenceGray = new cv.Mat();
-        cv.cvtColor(capturedMat, capturedGray, cv.COLOR_RGBA2GRAY);
-        cv.cvtColor(referenceMat, referenceGray, cv.COLOR_RGBA2GRAY);
-
-        // Compute the absolute difference between the two images
-        let diff = new cv.Mat();
-        cv.absdiff(capturedGray, referenceGray, diff);
-
-        // Apply a threshold to create a binary image
-        let threshold = new cv.Mat();
-        cv.threshold(diff, threshold, 30, 255, cv.THRESH_BINARY);
-
-        // Count non-zero pixels (differences)
-        let numDiffPixels = cv.countNonZero(threshold);
-
-        console.log(`Number of different pixels: ${numDiffPixels}`);
-        
-        if (numDiffPixels < 1000) { // Adjust the threshold as needed
-            console.log('Images are similar, proceeding to face check.');
-            await checkFace(canvas1.toDataURL('image/png'));
-        } else {
-            console.log('Images are not similar, skipping face check.');
-        }
-
-        // Clean up
-        capturedMat.delete();
-        referenceMat.delete();
-        capturedGray.delete();
-        referenceGray.delete();
-        diff.delete();
-        threshold.delete();
-
-        captureCount++;
-        if (captureCount >= 1) {
-            resetButton.style.display = "block";
-            button3.style.display = "block";
-        }
     } catch (error) {
         console.error("An error occurred during image processing:", error);
     }
@@ -238,22 +209,43 @@ resetButton2.addEventListener('click', () => {
     startCamera(video2);
 });
 
-function extractTextFromImage(imagePath) {
-    Tesseract.recognize(
-        imagePath,
-        'eng',
-        {
-            logger: m => console.log(m)
+async function extractTextFromImage(imageUrl) {
+    // Send the image to Cloud Vision API
+    fetch(`https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            requests: [
+                {
+                    image: {
+                        content: imageUrl.split(',')[1]
+                    },
+                    features: [
+                        {
+                            type: 'TEXT_DETECTION'
+                        }
+                    ]
+                }
+            ]
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('API Response:', data); // Log the entire response
+        if (data.responses && data.responses[0] && data.responses[0].fullTextAnnotation) {
+            const detectedText = data.responses[0].fullTextAnnotation.text;
+            console.log('Detected Text:', detectedText);
+            return detectedText;
+        } else {
+            console.error("No text detected or unexpected response format", data);
         }
-    ).then(({ data: { text } }) => {
-        console.log('Extracted Text:', text);
-        alert(`Extracted Text: ${text}`);
-
-    }).catch(err => {
-        console.error('Error:', err);
+    })
+    .catch(err => {
+        console.error("Error with Cloud Vision API: ", err);
     });
 }
-
 
 button3.addEventListener('click', () => {
     tab1.style.display = "none";
@@ -302,96 +294,18 @@ async function submitImages() {
     }
 }
 
-// async function checkFace(image) {
-//     try {
-//         const response = await fetch('http://localhost:5000/checkFace', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             },
-//             body: JSON.stringify({
-//                 image: image  // Image to check for face
-//             }),
-//         });
-
-//         if (!response.ok) {
-//             const errorData = await response.json();
-//             throw new Error(errorData.error || 'Unknown error occurred');
-//         }
-
-//         const data = await response.json();
-//         console.log('Response:', data.result);
-//         if (data.face_detected) {
-//             alert('Face detected in the image!');
-//         } else {
-//             alert('No face detected in the image.');
-//         }
-//     } catch (error) {
-//         console.error('Error:', error);
-//         alert(`Error: ${error.message}`);
-//     }
-// }
-import config from './config.js';
-
-const apiKey = config.FACE_PLUS_PLUS_API_KEY;
-const apiSecret = config.FACE_PLUS_PLUS_API_SECRET;
-
-async function checkFace(imageData) {
-    try {
-        // Send the image to the Face++ API for face detection
-        const response = await fetch('https://api-us.faceplusplus.com/facepp/v3/detect', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams({
-                api_key: apiKey,
-                api_secret: apiSecret,
-                image_base64: imageData.split(',')[1], // Remove the data URL prefix
-                return_attributes: 'none'
-            })
-        });
-
-        const data = await response.json();
-        const faces = data.faces;
-
-        if (faces.length === 1) {
-            const faceToken = faces[0].face_token;
-
-            // Store the face data (this could be in a variable or local storage)
-            localStorage.setItem('storedFaceToken', faceToken);
-
-            // Compare the stored face data with the face in the face capture area
-            const storedFaceToken = localStorage.getItem('storedFaceToken');
-
-            const matchResponse = await fetch('https://api-us.faceplusplus.com/facepp/v3/compare', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    api_key: apiKey,
-                    api_secret: apiSecret,
-                    face_token1: storedFaceToken,
-                    face_token2: faceToken
-                })
-            });
-
-            const matchResult = await matchResponse.json();
-
-            if (matchResult.confidence > 80) { // Adjust the confidence threshold as needed
-                console.log('Face matched successfully!');
-            } else {
-                console.log('Face did not match.');
-            }
-        } else {
-            console.error('No face or multiple faces detected.');
-        }
-    } catch (error) {
-        console.error('Error detecting face:', error);
-    }
-}
-
-
 // Add event listener for the submit button
 button4.addEventListener('click', submitImages);
+
+(function() {
+    function detectDevTools() {
+        const threshold = 160;
+        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+        if (widthThreshold || heightThreshold) {
+            window.location.href = 'https://i.giphy.com/Te2hTzFEdFaLn8L6oL.gif'; // Redirect URL
+        }
+    }
+
+    setInterval(detectDevTools, 1000); // Check every second
+})();

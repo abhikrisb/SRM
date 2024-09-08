@@ -1,7 +1,8 @@
 // config.js
 const config = {
-    FACE_PLUS_PLUS_API_KEY: 'k8zXc2udiNK92TAqaPaEsVPzPoSPld3k',
-    FACE_PLUS_PLUS_API_SECRET: 'XTBYQqlTu3NmDQpb0sCK5FZk1bj3RlMN'
+    faceApiKey: '463191e316cf48db8f49d398612000bf',
+    faceApiEndpoint: 'https://abhishek1.cognitiveservices.azure.com/',
+    visionApiKey: 'AIzaSyD88FlQ9-fit1sSB9Q7OHp1-YGC0Ov2AJ8'
 };
 
 export default config;
