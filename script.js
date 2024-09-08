@@ -297,15 +297,15 @@ async function submitImages() {
 // Add event listener for the submit button
 button4.addEventListener('click', submitImages);
 
-(function() {
-    function detectDevTools() {
-        const threshold = 160;
-        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-        if (widthThreshold || heightThreshold) {
-            window.location.href = 'https://i.giphy.com/Te2hTzFEdFaLn8L6oL.gif'; // Redirect URL
-        }
-    }
+// (function() {
+//     function detectDevTools() {
+//         const threshold = 160;
+//         const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+//         const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+//         if (widthThreshold || heightThreshold) {
+//             window.location.href = 'https://i.giphy.com/Te2hTzFEdFaLn8L6oL.gif'; // Redirect URL
+//         }
+//     }
 
-    setInterval(detectDevTools, 1000); // Check every second
-})();
+//     setInterval(detectDevTools, 1000); // Check every second
+// })();
