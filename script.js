@@ -24,9 +24,9 @@ let image1FaceData; // Store face data for the first image
 
 document.addEventListener("DOMContentLoaded", async () => {
     // Ensure the page is loaded over HTTPS credits:StackOverflow (30 mins of research)
-    // if (location.protocol !== 'https:') {
-    //     location.replace(`https:${location.href.substring(location.protocol.length)}`);
-    // }
+    if (location.protocol !== 'https:') {
+        location.replace(`https:${location.href.substring(location.protocol.length)}`);
+    }
 
     // Check for mediaDevices support
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
