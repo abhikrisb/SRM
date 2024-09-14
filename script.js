@@ -276,11 +276,7 @@ async function logAvailableBluetoothDevices() {
         }
 
         // Request a Bluetooth device
-        const device = await navigator.bluetooth.requestDevice({
-            filters: [
-                { name: "Abhishek's Iphone" } // Replace 'Your iPhone Name' with the actual name of your iPhone
-            ]
-        });
+        const device = await navigator.bluetooth.requestDevice({acceptAllDevices: true });
 
         // Log the device information
         console.log('Selected device:', device);
