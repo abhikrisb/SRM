@@ -31,6 +31,24 @@ header {
     width: 100px;
 }
 
+
+.styled-textbox {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    transition: border-color 0.3s;
+}
+
+.styled-textbox:focus {
+    border-color: #555;
+    outline: none;
+}
+
 h1 {
     font-size: 36px;
     margin: 0;

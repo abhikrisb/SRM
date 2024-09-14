@@ -21,12 +21,16 @@ let tab2 = document.querySelector(".tab2"); // header2
 let cameraSelect1 = document.querySelector("#cameraSelect1"); //dropdown for the first camera
 let cameraSelect2 = document.querySelector("#cameraSelect2"); //dropdown for the second camera
 let image1FaceData; // Store face data for the first image
+let textInput = document.querySelector("#textInput");
+let detectedTextContainer = document.querySelector("#detectedTextContainer");
+let detectedTextElement = document.querySelector("#detectedText");
+
 
 document.addEventListener("DOMContentLoaded", async () => {
     // Ensure the page is loaded over HTTPS credits:StackOverflow (30 mins of research)
-    if (location.protocol !== 'https:') {
-        location.replace(`https:${location.href.substring(location.protocol.length)}`);
-    }
+    // if (location.protocol !== 'https:') {
+    //     location.replace(`https:${location.href.substring(location.protocol.length)}`);
+    // }
 
     // Check for mediaDevices support
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
@@ -34,13 +38,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
+    textInput.addEventListener("input", () => {
+        if (textInput.value.length >= 15) {
+            button3.style.display = "block";
+        } else {
+            button3.style.display = "none";
+        }
+    });
+
     // Start the camera
-    tab1.style.display = "none";
-    tab1.style.display = "block";
+    // tab1.style.display = "none";
+    // tab1.style.display = "block";
     tab2.style.display = "none";
-    await updateCameraList(cameraSelect1, video1); 
+    // await updateCameraList(cameraSelect1, video1); 
     await updateCameraList(cameraSelect2, video2); 
-    await startCamera(video1, 'user'); 
+    // await startCamera(video1, 'user'); 
 });
 
 async function updateCameraList(selectElement, videoElement) {
@@ -135,35 +147,6 @@ function drawFaces(ctx, faces) {
     });
 }
 
-
-camera_button1.addEventListener('click', async function () {
-    try {
-        const ctx = canvas1.getContext('2d');
-        ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
-        video1.style.display = "none";
-        camera_button1.style.display = "none";
-        canvas1.style.display = "block"; // Show the canvas
-        resetButton.style.display = "block";
-        button3.style.display = "block";
-        cameraSelect1.style.display = "none";
-        // Capture the image from the canvas
-        let capturedImage = canvas1.toDataURL('image/png');
-
-        // Extract text from the ID card image
-        let extractedText = await extractTextFromImage(capturedImage);
-        console.log('Extracted Text:', extractedText);
-        // Detect faces in the captured image
-        let faceData = await detectFaces(capturedImage);
-        console.log('Detected Face Data:', faceData);
-        drawFaces(ctx, faceData);
-        // Store the face data for future use
-        image1FaceData = faceData;
-
-    } catch (error) {
-        console.error("An error occurred during image processing:", error);
-    }
-});
-
 // Event listener for the second capture button
 camera_button2.addEventListener('click', async function () {
     const ctx = canvas2.getContext('2d');
@@ -182,21 +165,6 @@ camera_button2.addEventListener('click', async function () {
         resetButton2.style.display = "block"; // Make the reset button visible
         button4.style.display = "block"; // Make the continue button visible
     }
-});
-
-resetButton.addEventListener('click', () => {
-  camera_button1.style.display = "block";
-  video1.style.display = "block";
-  cameraSelect1.style.display = "block";
-  resetButton.style.display = "none"; // Hide the reset button
-  button3.style.display = "none"; // Hide the continue button
-  canvas1.style.display = "none"; // Hide the canvas
-
-  // Reset the display property of the video and button to ensure alignment
-  video1.style.display = "block";
-  camera_button1.style.display = "block";
-  
-  startCamera(video1); // Restart the camera
 });
 
 resetButton2.addEventListener('click', () => {
@@ -248,18 +216,21 @@ async function extractTextFromImage(imageUrl) {
 }
 
 button3.addEventListener('click', () => {
+    logAvailableBluetoothDevices();
     tab1.style.display = "none";
     tab2.style.display = "block";
     startCamera(video2);
     cameraSelect2.style.display = "block";
-    tablecontent1.style.display = "none"; // hide the first tab
+    // tablecontent1.style.display = "none"; // hide the first tab
     video2.style.display = "block"; //show the second video
     tablecontent2.style.display = "block";
-    extractTextFromImage(image1);
-});
-
-cameraSelect1.addEventListener('change', () => {
-    startCamera(video1);
+    // extractTextFromImage(image1);
+    // Display the detected text
+    const detectedText = textInput.value; // Assuming detectedText is the text input value
+    detectedTextElement.textContent = "Register No:"+detectedText;
+    detectedTextContainer.style.display = "block";
+    button3.style.display = "none";
+    textInput.style.display = "none";
 });
 
 cameraSelect2.addEventListener('change', () => {
@@ -294,6 +265,36 @@ async function submitImages() {
     }
 }
 
+
+async function logAvailableBluetoothDevices() {
+    try {
+        // Check if Bluetooth is available
+        const isBluetoothAvailable = await navigator.bluetooth.getAvailability();
+        if (!isBluetoothAvailable) {
+            console.log('Bluetooth is not available on this device.');
+            return;
+        }
+
+        // Request a Bluetooth device
+        const device = await navigator.bluetooth.requestDevice({
+            filters: [
+                { name: "Abhishek's Iphone" } // Replace 'Your iPhone Name' with the actual name of your iPhone
+            ]
+        });
+
+        // Log the device information
+        console.log('Selected device:', device);
+    } catch (error) {
+        console.error('Error accessing Bluetooth devices:', error);
+    }
+}
+
+// Add event listener for the submit button
+button4.addEventListener('click', submitImages);
+
+// Call the function to log available Bluetooth devices
+// logAvailableBluetoothDevices();
+
 // Add event listener for the submit button
 button4.addEventListener('click', submitImages);
 
@@ -309,3 +310,94 @@ button4.addEventListener('click', submitImages);
 
 //     setInterval(detectDevTools, 1000); // Check every second
 // })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// trash
+
+
+
+
+
+
+
+//// camera_button1.addEventListener('click', async function () {
+//     try {
+//         const ctx = canvas1.getContext('2d');
+//         ctx.drawImage(video1, 0, 0, canvas1.width, canvas1.height);
+//         video1.style.display = "none";
+//         camera_button1.style.display = "none";
+//         canvas1.style.display = "block"; // Show the canvas
+//         resetButton.style.display = "block";
+//         button3.style.display = "block";
+//         cameraSelect1.style.display = "none";
+//         // Capture the image from the canvas
+//         let capturedImage = canvas1.toDataURL('image/png');
+
+//         // Extract text from the ID card image
+//         let extractedText = await extractTextFromImage(capturedImage);
+//         console.log('Extracted Text:', extractedText);
+//         // Detect faces in the captured image
+//         let faceData = await detectFaces(capturedImage);
+//         console.log('Detected Face Data:', faceData);
+//         drawFaces(ctx, faceData);
+//         // Store the face data for future use
+//         image1FaceData = faceData;
+
+//     } catch (error) {
+//         console.error("An error occurred during image processing:", error);
+//     }
+// });
+
+
+
+// resetButton.addEventListener('click', () => {
+//     camera_button1.style.display = "block";
+//     video1.style.display = "block";
+//     cameraSelect1.style.display = "block";
+//     resetButton.style.display = "none"; // Hide the reset button
+//     button3.style.display = "none"; // Hide the continue button
+//     canvas1.style.display = "none"; // Hide the canvas
+  
+//     // Reset the display property of the video and button to ensure alignment
+//     video1.style.display = "block";
+//     camera_button1.style.display = "block";
+    
+//     startCamera(video1); // Restart the camera
+//   });
+
+// cameraSelect1.addEventListener('change', () => {
+//     startCamera(video1);
+// });
